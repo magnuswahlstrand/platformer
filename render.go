@@ -57,12 +57,11 @@ func (g *Game) drawEntities(screen *ebiten.Image) {
 	if hitbox {
 
 		// Draw hitboxes
-		for _, e := range g.filteredEntities(components.HitboxType, components.PosType) {
-			// for _, e := range []string{playerID} {
-			pos := g.entities.GetUnsafe(e, components.PosType).(*components.Pos)
-			hb := g.entities.GetUnsafe(e, components.HitboxType).(*components.Hitbox)
-			drawPixelRect(screen, hb.Moved(pos.Vec), colornames.Red)
-		}
-
+		// for _, e := range g.filteredEntities(components.HitboxType, components.PosType) {
+		// 	pos := g.entities.GetUnsafe(e, components.PosType).(*components.Pos)
+		// 	hb := g.entities.GetUnsafe(e, components.HitboxType).(*components.Hitbox)
+		// 	// fmt.Println(e, pos, hb)
+		// 	// drawPixelRect(screen, hb.Moved(pos.Vec), colornames.Red)
+		// }
 	}
 }

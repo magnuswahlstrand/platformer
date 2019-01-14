@@ -100,12 +100,12 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 			// Todo, fix
 			_, bY := res.ShapeB.GetXY()
 			if v.Y > 0 { // Above
-				fmt.Println("Above")
+				// fmt.Println("Above")
 				fac := hb.Max.Y
-				fmt.Println(hb.H(), fac)
+				// fmt.Println(hb.H(), fac)
 				pos.Y = float64(bY/factor) - fac
 			} else if v.Y < 0 { // Underneath
-				fmt.Println("Underneath")
+				// fmt.Println("Underneath")
 			}
 
 			v.Y = 0

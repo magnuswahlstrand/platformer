@@ -2,11 +2,11 @@ package main
 
 import (
 	_ "image/png"
-	"log"
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/kyeett/ebitenconsole"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -25,6 +25,6 @@ func main() {
 	currentTime = time.Now()
 
 	if err := ebiten.Run(g.update, screenWidth, screenHeight, 2, "Aseprite demo"); err != nil {
-		log.Fatal(err)
+		logrus.Error(err)
 	}
 }

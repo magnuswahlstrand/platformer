@@ -5,10 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"log"
+	"math/rand"
+	"os"
 	"text/tabwriter"
 	"time"
 
 	"github.com/kyeett/gomponents/components"
+	"github.com/kyeett/tiled"
 	"github.com/peterhellberg/gfx"
 
 	"github.com/hajimehoshi/ebiten"
@@ -131,36 +135,88 @@ func NewGame() Game {
 	g.entities.Add(playerID, components.Animated{playerFile})
 
 	hitbox = gfx.R(0, 0, 32, 32)
-	x, y := 0, 1
-	boxID := "cdf321"
-	g.entities.Add(boxID, components.Hitbox{hitbox})
-	g.entities.Add(boxID, components.Pos{gfx.V(70, 220)})
-	g.entities.Add(boxID, components.Drawable{tileImage.SubImage((image.Rect(32*x, 32*y, 32*(x+1), 32*(y+1)))).(*ebiten.Image)})
+	box1 := "cdf321"
+	g.newBox(box1, gfx.V(70, 220), "green")
 
-	boxID2 := "cdf322"
-	g.entities.Add(boxID2, components.Hitbox{hitbox})
-	g.entities.Add(boxID2, components.Pos{gfx.V(70+32, 220)})
-	g.entities.Add(boxID2, components.Drawable{tileImage.SubImage((image.Rect(32*x, 32*y, 32*(x+1), 32*(y+1)))).(*ebiten.Image)})
+	box2 := "cdf322"
+	g.newBox(box2, gfx.V(70+32, 220), "green")
 
-	boxID3 := "cdf323"
-	g.entities.Add(boxID3, components.Hitbox{hitbox})
-	g.entities.Add(boxID3, components.Pos{gfx.V(70+2*32, 220)})
-	g.entities.Add(boxID3, components.Drawable{tileImage.SubImage((image.Rect(32*x, 32*y, 32*(x+1), 32*(y+1)))).(*ebiten.Image)})
+	box3 := "cdf323"
+	g.newBox(box3, gfx.V(70+2*32, 220), "green")
 
-	x, y = 1, 1
-	boxID4 := "cdf324"
-	g.entities.Add(boxID4, components.Hitbox{hitbox})
-	g.entities.Add(boxID4, components.Pos{gfx.V(70+2*32, 220-32)})
-	g.entities.Add(boxID4, components.Drawable{tileImage.SubImage((image.Rect(32*x, 32*y, 32*(x+1), 32*(y+1)))).(*ebiten.Image)})
+	box4 := "cdf324"
+	g.newBox(box4, gfx.V(70+2*32, 220-32), "blue")
 
-	x, y = 1, 0
-	boxID5 := "cdf325"
-	g.entities.Add(boxID5, components.Hitbox{hitbox})
-	g.entities.Add(boxID5, components.Pos{gfx.V(70, 220-3*32)})
-	g.entities.Add(boxID5, components.Drawable{tileImage.SubImage((image.Rect(32*x, 32*y, 32*(x+1), 32*(y+1)))).(*ebiten.Image)})
+	box5 := "cdf325"
+	g.newBox(box5, gfx.V(70, 220-3*32), "red")
+	g.entityList = []string{playerID, box1, box2, box3, box4, box5}
 
-	g.entityList = []string{playerID, boxID, boxID2, boxID3, boxID4, boxID5}
+	tmxPath := "../tiled/world6.tmx"
+	worldMap, err := tiled.MapFromFile(tmxPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	f, err := os.Open("assets/tilesheets/platformer2.png")
+	if err != nil {
+		log.Fatal("open image: %s")
+	}
+	img, _, err := image.Decode(f)
+	if err != nil {
+		log.Fatal("decode image: %s")
+	}
+
+	sImg, err := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(worldMap.FilteredLayers("yoyo"), sImg)
+
+	for _, layer := range worldMap.FilteredLayers("") {
+
+		for _, t := range worldMap.LayerTiles(layer) {
+
+			sRect := image.Rect(t.SrcX, t.SrcY, t.SrcX+t.Width, t.SrcY+t.Height)
+
+			// box := gfx.R(0, 0, 32, 32)
+			id := fmt.Sprintf("%d", rand.Intn(10000))
+			g.entities.Add(id, components.Pos{gfx.V(float64(t.X), float64(t.Y))})
+			g.entities.Add(id, components.Drawable{sImg.SubImage(sRect).(*ebiten.Image)})
+			// fmt.Println("Adding", t.X, t.Y)
+
+			// fmt.Println("aaaa")
+			// for _, o := range t.Objectgroup.Objects {
+
+			// 	box := gfx.R(float64(o.X), float64(o.Y), float64(o.X+o.Width), float64(o.Y+o.Height))
+			// 	g.entities.Add(id, components.Hitbox{box})
+			// 	fmt.Println("Adding at", box)
+			// }
+			g.entityList = append(g.entityList, id)
+		}
+	}
 	return g
+}
+
+func (g *Game) newBox(id string, v gfx.Vec, name string) {
+
+	var x, y int
+	switch name {
+	case "red":
+		x, y = 1, 0
+	case "blue":
+		x, y = 1, 1
+	case "green":
+		x, y = 0, 1
+	default:
+		log.Fatal("invalid name:", name)
+	}
+
+	box := gfx.R(0, 0, 32, 32)
+	fmt.Println("Adding 2at", box)
+	g.entities.Add(id, components.Hitbox{box})
+	g.entities.Add(id, components.Pos{v})
+	g.entities.Add(id, components.Drawable{tileImage.SubImage((image.Rect(32*x, 32*y, 32*(x+1), 32*(y+1)))).(*ebiten.Image)})
 }
 
 // Todo, handle Direction properly
