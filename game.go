@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"image"
@@ -9,15 +8,13 @@ import (
 	"image/draw"
 	"log"
 	"math/rand"
-	"text/tabwriter"
-	"time"
+	"strconv"
 
 	"github.com/kyeett/gomponents/components"
 	"github.com/kyeett/tiled"
 	"github.com/peterhellberg/gfx"
 
 	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/inpututil"
 	"github.com/kyeett/ebitenconsole"
 )
@@ -51,74 +48,25 @@ func (g *Game) update(screen *ebiten.Image) error {
 	}
 
 	// Inspired by https://forums.tigsource.com/index.php?topic=46289.msg1386874#msg1386874
-
 	// UpdatePreMovement
 	// Apply friction, gravity and keypresses
 	g.updatePreMovement()
+
 	g.updateMovement(screen)
 
 	// For each Entity
-	// UpdatePostMovement
-
 	screen.DrawImage(backgroundImg, &ebiten.DrawImageOptions{})
 	if ebiten.IsDrawingSkipped() {
 		return nil
 	}
 
-	// drawRect(sceen, h.X, y int32, w int32, h int32, c invalid type)
-	// func drawRect(screen *ebiten.Image, x, y, w, h int32, c color.Color) {
-	// ebitenutil.DrawRect(screen, float64(x), float64(y), float64(w), float64(h), c)
-
-	drawTrail(screen)
-
 	g.updatePostMovement()
 
 	// Draw entities
 	g.drawEntities(screen)
-
-	// ebitenutil.DebugPrint(screen, fmt.Sprintf("Current animation:   %s\nFrame (index/total): %d/%d",
-	// 	g.player.Ase.CurrentAnimation.Name,
-	// 	g.player.Ase.CurrentFrame-g.player.Ase.CurrentAnimation.Start,
-	// 	g.player.Ase.CurrentAnimation.End-g.player.Ase.CurrentAnimation.Start+1))
-
 	g.drawScoreboard(screen)
 	g.drawDebugInfo(screen)
 	return nil
-}
-
-var currentTime time.Time
-var diffTime time.Duration
-
-func (g *Game) drawScoreboard(screen *ebiten.Image) {
-	fullHeart := image.Rect(0, 8, 8, 16)
-	emptyHeart := image.Rect(8, 8, 16, 16)
-	screen.DrawImage(scoreboardImg, &ebiten.DrawImageOptions{})
-
-	counter := g.entities.GetUnsafe(playerID, components.CounterType).(*components.Counter)
-
-	for l := 0.0; l < 3; l++ {
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(8*l+4, 4)
-		if int(l) >= (*counter)["lives"] {
-			screen.DrawImage(miscImage.SubImage(emptyHeart).(*ebiten.Image), op)
-		} else {
-			screen.DrawImage(miscImage.SubImage(fullHeart).(*ebiten.Image), op)
-		}
-	}
-}
-
-func (g *Game) drawDebugInfo(screen *ebiten.Image) {
-	pos := g.entities.GetUnsafe(playerID, components.PosType).(*components.Pos)
-	v := g.entities.GetUnsafe(playerID, components.VelocityType).(*components.Velocity)
-	buf := bytes.NewBufferString("")
-	wr := tabwriter.NewWriter(buf, 0, 1, 3, ' ', 0)
-	fmt.Fprintf(wr, "x, y:\t(%4.0f,%4.0f)\t\n\t(%4.2f,%4.2f)\t", pos.X, pos.Y, v.X, v.Y)
-	wr.Flush()
-
-	// ebitenutil.DebugPrintAt(screen, buf.String(), 50, 60)
-
-	ebitenutil.DebugPrintAt(screen, ebitenconsole.String(), 0, 40)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %.2f", ebiten.CurrentTPS()), 190, 0)
 }
 
 type Game struct {
@@ -226,13 +174,8 @@ func NewGame() Game {
 				fmt.Println("Adding at", box)
 			}
 
-			for _, p := range t.Properties.Property {
-				fmt.Println(p)
-				switch p.Name {
-				case "hazard":
-					g.entities.Add(id, components.Hazard{})
-				}
-			}
+			g.parseTileProperty(id, t.Properties.Property)
+
 			g.entityList = append(g.entityList, id)
 		}
 	}
@@ -243,6 +186,29 @@ func NewGame() Game {
 	}
 
 	return g
+}
+
+func (g *Game) parseTileProperty(id string, props []tiled.Property) {
+	for _, p := range props {
+		switch p.Name {
+		case "hazard":
+			val, _ := strconv.ParseBool(p.Value)
+			if val {
+				g.entities.Add(id, components.Hazard{})
+			}
+		case "bouncy":
+			val, _ := strconv.ParseBool(p.Value)
+			if val {
+				g.entities.Add(id, components.Bouncy{})
+			}
+		case "killable":
+			val, _ := strconv.ParseBool(p.Value)
+			if val {
+				g.entities.Add(id, components.Killable{})
+			}
+		}
+		fmt.Println(p.Name, p.Value)
+	}
 }
 
 var initialPos gfx.Vec

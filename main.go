@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var hitbox = true
+var hitbox = false
 var bnw = false
 
 func main() {
