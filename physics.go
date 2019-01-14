@@ -35,11 +35,11 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 		s := hitboxToRect(resizedBox)
 		// s.SetTags(e)
 		// s.SetData(hb)
-		s.SetTags(e)
+		tags := []string{e}
 		if hb.Properties["allow_from_down"] {
-			s.SetTags("allow_from_down")
+			tags = append(tags, "allow_from_down")
 		}
-
+		s.SetTags(tags...)
 		space.AddShape(s)
 	}
 
@@ -65,6 +65,7 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 			t := res.ShapeB.GetTags()[0]
 			// Calculate distance to object
 			// Todo, fix
+
 			_, bY := res.ShapeB.GetXY()
 
 			entityUnderneath := v.Y > 0
@@ -93,17 +94,7 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 
 		if res := space.Resolve(r, int32(factor*v.X), 0); res.Colliding() && !res.Teleporting {
 			t := res.ShapeB.GetTags()[0]
-
-			if g.entities.HasComponents(t, components.HazardType) {
-				g.Reset()
-				return
-			}
-
-			// Bounce if not jumping or falling
-			if v.Y == 0 {
-				v.X = -0.5 * v.X
-			}
-
+			g.handleCollidedX(e, t)
 		} else {
 			pos.X += v.X
 		}
@@ -126,4 +117,18 @@ func (g *Game) handleKilled(t string) {
 			return pas.Y > float64(g.Height)
 		},
 	})
+}
+
+func (g *Game) handleCollidedX(e, t string) {
+
+	v := g.entities.GetUnsafe(e, components.VelocityType).(*components.Velocity)
+	if g.entities.HasComponents(t, components.HazardType) {
+		g.Reset()
+		return
+	}
+
+	// Bounce if not jumping or falling
+	if v.Y == 0 {
+		v.X = -0.5 * v.X
+	}
 }

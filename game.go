@@ -13,6 +13,7 @@ import (
 	"github.com/kyeett/gomponents/components"
 	"github.com/kyeett/tiled"
 	"github.com/peterhellberg/gfx"
+	"golang.org/x/image/colornames"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/inpututil"
@@ -22,6 +23,8 @@ import (
 var (
 	tmpImg        *ebiten.Image
 	backgroundImg *ebiten.Image
+	foregroundImg *ebiten.Image
+	visionImg     *ebiten.Image
 	traceImg      *ebiten.Image
 	scoreboardImg *ebiten.Image
 )
@@ -51,22 +54,62 @@ func (g *Game) update(screen *ebiten.Image) error {
 	// UpdatePreMovement
 	// Apply friction, gravity and keypresses
 	g.updatePreMovement()
-
 	g.updateMovement(screen)
 
 	// For each Entity
-	screen.DrawImage(backgroundImg, &ebiten.DrawImageOptions{})
 	if ebiten.IsDrawingSkipped() {
 		return nil
 	}
-
 	g.updatePostMovement()
 
+	// Draw background
+
+	screen.DrawImage(backgroundImg, &ebiten.DrawImageOptions{})
+
+	// screen.DrawImage(foregroundImg, &ebiten.DrawImageOptions{})
 	// Draw entities
 	g.drawEntities(screen)
+
+	g.drawPlayerVision(screen)
+
+	// Draw foreground
+	// screen.DrawImage(foregroundImg, &ebiten.DrawImageOptions{})
+
 	g.drawScoreboard(screen)
 	g.drawDebugInfo(screen)
 	return nil
+}
+
+func (g *Game) drawHitboxes(screen *ebiten.Image) {
+	if hitbox {
+		// Draw hitboxes
+		for _, e := range g.filteredEntities(components.HitboxType, components.PosType) {
+			pos := g.entities.GetUnsafe(e, components.PosType).(*components.Pos)
+			hb := g.entities.GetUnsafe(e, components.HitboxType).(*components.Hitbox)
+
+			if hb.Properties["allow_from_down"] {
+				drawPixelRect(screen, hb.Moved(pos.Vec), colornames.Turquoise)
+			} else {
+				drawPixelRect(screen, hb.Moved(pos.Vec), colornames.Red)
+			}
+		}
+	}
+}
+
+func (g *Game) drawPlayerVision(screen *ebiten.Image) {
+	opt := &ebiten.DrawImageOptions{}
+	// opt.Address = ebiten.AddressRepeat
+
+	pos := g.entities.GetUnsafe(playerID, components.PosType).(*components.Pos)
+	opt.GeoM.Translate(pos.X-float64(visionImg.Bounds().Dx())/2+15, pos.Y-float64(visionImg.Bounds().Dy())/2+20)
+	opt.CompositeMode = ebiten.CompositeModeDestinationOut
+	tmp, _ := ebiten.NewImageFromImage(foregroundImg, ebiten.FilterDefault)
+	// tmp, _ := ebiten.NewImage(200, 200, ebiten.FilterDefault)
+	// tmp.Fill(colornames.Red)
+	// backgroundImg.DrawImage(visionImg, &ebiten.DrawImageOptions{})
+
+	tmp.DrawImage(visionImg, opt)
+	screen.DrawImage(tmp, &ebiten.DrawImageOptions{})
 }
 
 type Game struct {
@@ -112,6 +155,10 @@ func NewGame() Game {
 	scoreboardImg, _ = ebiten.NewImage(g.Width, 16, ebiten.FilterDefault)
 	scoreboardImg.Fill(color.Black)
 
+	tmpImg2 := gfx.NewImage(200, 200, color.Transparent)
+	gfx.DrawCircle(tmpImg2, gfx.V(100, 100), 50, 0, color.White)
+	visionImg, _ = ebiten.NewImageFromImage(tmpImg2, ebiten.FilterDefault)
+
 	img, err := worldMap.LoadImage(0)
 	if err != nil {
 		log.Fatal("decode image: %s")
@@ -139,11 +186,54 @@ func NewGame() Game {
 		if err != nil {
 			log.Fatal(err)
 		}
-
 	}
 
 	for _, layer := range worldMap.FilteredLayers() {
-		if layer.Name == "background" {
+		if layer.Name != "foreground" {
+			continue
+		}
+
+		img := gfx.NewImage(g.Width, g.Height, color.Transparent)
+		for _, t := range worldMap.LayerTiles(layer) {
+			sRect := image.Rect(t.SrcX, t.SrcY, t.SrcX+t.Width, t.SrcY+t.Height)
+			dstRect := image.Rect(t.X, t.Y, g.Width+100, g.Height)
+			draw.Draw(img, dstRect, sImg.SubImage(sRect), image.Pt(t.SrcX, t.SrcY), draw.Over)
+		}
+
+		foregroundImg, err = ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	for _, layer := range worldMap.FilteredLayers() {
+		if layer.Name != "hitboxes" {
+			continue
+		}
+
+		for _, t := range worldMap.LayerTiles(layer) {
+			id := fmt.Sprintf("%d", rand.Intn(10000))
+			g.entities.Add(id, components.Pos{gfx.V(float64(t.X), float64(t.Y))})
+			for _, o := range t.Objectgroup.Objects {
+				box := gfx.R(float64(o.X), float64(o.Y), float64(o.X+o.Width), float64(o.Y+o.Height))
+				b := components.NewHitbox(box)
+
+				// Check for special hitboxes
+				for _, p := range o.Properties.Property {
+					if p.Name == "allow_from_down" && p.Value == "true" {
+						b.Properties[p.Name] = true
+					}
+				}
+				g.entities.Add(id, b)
+			}
+			g.parseTileProperty(id, t.Properties.Property)
+			g.entityList = append(g.entityList, id)
+		}
+	}
+
+	for _, layer := range worldMap.FilteredLayers() {
+		if layer.Name == "background" || layer.Name == "hitboxes" || layer.Name == "foreground" {
 			continue
 		}
 

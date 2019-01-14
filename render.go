@@ -100,18 +100,4 @@ func (g *Game) drawEntities(screen *ebiten.Image) {
 		// For debug, add dot to mark position
 		ebitenutil.DrawRect(traceImg, pos.X, pos.Y, 1, 1, colornames.Red)
 	}
-
-	if hitbox {
-		// Draw hitboxes
-		for _, e := range g.filteredEntities(components.HitboxType, components.PosType) {
-			pos := g.entities.GetUnsafe(e, components.PosType).(*components.Pos)
-			hb := g.entities.GetUnsafe(e, components.HitboxType).(*components.Hitbox)
-
-			if hb.Properties["allow_from_down"] {
-				drawPixelRect(screen, hb.Moved(pos.Vec), colornames.Turquoise)
-			} else {
-				drawPixelRect(screen, hb.Moved(pos.Vec), colornames.Red)
-			}
-		}
-	}
 }
