@@ -22,6 +22,10 @@ func main() {
 			name: "Tiles_png",
 		},
 		resource{
+			path: "assets/graphics/misc.png",
+			name: "Misc_png",
+		},
+		resource{
 			path: "assets/graphics/character.png",
 			name: "Character_png",
 		},

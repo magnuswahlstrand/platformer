@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-
-	"golang.org/x/image/colornames"
+	"time"
 
 	"github.com/SolarLune/resolv/resolv"
 	"github.com/hajimehoshi/ebiten"
@@ -27,12 +26,10 @@ func (g *Game) updatePreMovement() {
 			v.Y = -5
 
 		case ebiten.IsKeyPressed(ebiten.KeyRight):
-			fmt.Print("Move right")
 			v.X += 0.3
 			d.D = 1
 
 		case ebiten.IsKeyPressed(ebiten.KeyLeft):
-			fmt.Print("-Move Left")
 			v.X -= 0.3
 			d.D = -1
 		}
@@ -43,11 +40,12 @@ func hitboxToRect(hb gfx.Rect) *resolv.Rectangle {
 	return resolv.NewRectangle(int32(hb.Min.X), int32(hb.Min.Y), int32(hb.W()), int32(hb.H()))
 }
 
-const factor = 100000
+const factor = 100
 
 func (g *Game) updateMovement(screen *ebiten.Image) {
 
 	var space resolv.Space
+	// Add possible collision entities
 	for _, e := range g.filteredEntities(components.HitboxType) {
 		if e == playerID {
 			continue
@@ -57,32 +55,22 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 		hbMoved := hb.Moved(pos.Vec)
 
 		// Debug things
-		// posBox := gfx.R(pos.X, pos.Y, pos.X+30, pos.Y+30)
 
-		// fmt.Println("Before", hb, hb.Size(), gfx.V(0, 0))
 		scaler := hbMoved.Size().Scaled(factor)
-		// scaledBox := gfx.R(0, 0, scaler.X, scaler.Y)
 		resizedBox := hbMoved.Resized(gfx.V(0, 0), scaler)
-		drawPixelFilledRect(screen, resizedBox, colornames.Yellowgreen)
-
-		// fmt.Println("After", resizedBox, scaler)
 
 		s := hitboxToRect(resizedBox)
-		s.SetTags(e)
-		s.SetData(hb)
+		// s.SetTags(e)
+		// s.SetData(hb)
+		if hb.Properties["allow_from_down"] {
+			s.SetTags("allow_from_down")
+		}
+
+		if g.entities.HasComponents(e, components.HazardType) {
+			s.SetTags("hazard")
+		}
+
 		space.AddShape(s)
-
-		// drawPixelFilledRect(screen, posBox, colornames.Pink)
-		// drawPixelFilledRect(screen, hbBox, colornames.Yellow)
-		// drawPixelFilledRect(screen, scaledBox, colornames.Blue)
-		// drawPixelFilledRect(screen, resizedBox, colornames.Wheat)
-		// drawPixelRect(screen, resizedBox, colornames.Wheat)
-	}
-	// log.Fatal("")
-
-	for i := 0; i < len(space); i++ {
-		x, y := space.Get(i).GetXY()
-		drawRect(screen, float64(x), float64(y), 15, 15, colornames.Turquoise)
 	}
 
 	for _, e := range []string{playerID} {
@@ -94,30 +82,51 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 		r := hitboxToRect(hbMoved.Resized(gfx.V(0, 0), scaler))
 
 		// Check collision vertically
-		if res := space.Resolve(r, 0, int32(factor*v.Y)); res.Colliding() && !res.Teleporting {
+
+		filterFunc := func(s resolv.Shape) bool { return true }
+		if v.Y < 0 {
+			filterFunc = func(s resolv.Shape) bool {
+				return !s.HasTags("allow_from_down")
+			}
+		}
+		verticalSpace := space.Filter(filterFunc)
+
+		if res := verticalSpace.Resolve(r, 0, int32(factor*v.Y)); res.Colliding() && !res.Teleporting {
 
 			// Calculate distance to object
 			// Todo, fix
 			_, bY := res.ShapeB.GetXY()
-			if v.Y > 0 { // Above
-				// fmt.Println("Above")
+
+			entityUnderneath := v.Y > 0
+
+			if entityUnderneath {
 				fac := hb.Max.Y
-				// fmt.Println(hb.H(), fac)
 				pos.Y = float64(bY/factor) - fac
 			} else if v.Y < 0 { // Underneath
-				// fmt.Println("Underneath")
+				fmt.Println("Underneath")
 			}
 
-			v.Y = 0
+			if res.ShapeB.HasTags("hazard") {
+				v.Y = -4
+			} else {
+				v.Y = 0
+			}
+
 			// log.Fatal("yay")
 		} else {
 			pos.Y += v.Y
 		}
 
 		if res := space.Resolve(r, int32(factor*v.X), 0); res.Colliding() && !res.Teleporting {
-			// Bound if not jumping or falling
-			if v.Y == 0 {
+			fmt.Println("Hit!", v.X)
 
+			if res.ShapeB.HasTags("hazard") {
+				g.Reset()
+				return
+			}
+
+			// Bounce if not jumping or falling
+			if v.Y == 0 {
 				v.X = -0.5 * v.X
 			}
 
@@ -128,6 +137,9 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 }
 
 func (g *Game) updatePostMovement() {
+	diffTime = time.Since(currentTime)
+	currentTime = time.Now()
+
 	for _, e := range []string{playerID} {
 		a := g.entities.GetUnsafe(e, components.AnimatedType).(*components.Animated)
 

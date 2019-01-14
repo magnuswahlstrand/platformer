@@ -9,22 +9,19 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	screenWidth  = 240
-	screenHeight = 240
-)
-
 var hitbox = true
+var bnw = false
 
 func main() {
 
 	g := NewGame()
-
+	screenWidth, screenHeight := g.Width, g.Height
 	ebitenconsole.FloatVar(&g.Gravity, "g", "world gravity")
 	ebitenconsole.BoolVar(&hitbox, "h", "show hitboxes")
+	ebitenconsole.BoolVar(&bnw, "bnw", "change game palette")
 	currentTime = time.Now()
 
-	if err := ebiten.Run(g.update, screenWidth, screenHeight, 2, "Aseprite demo"); err != nil {
+	if err := ebiten.Run(g.update, screenWidth, screenHeight, 3, "Aseprite demo"); err != nil {
 		logrus.Error(err)
 	}
 }

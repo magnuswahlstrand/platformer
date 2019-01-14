@@ -13,10 +13,10 @@ import (
 )
 
 func drawPixelRect(screen *ebiten.Image, r gfx.Rect, c color.Color) {
-	ebitenutil.DrawLine(screen, r.Min.X, r.Min.Y, r.Min.X, r.Max.Y, c)
-	ebitenutil.DrawLine(screen, r.Min.X, r.Max.Y, r.Max.X, r.Max.Y, c)
-	ebitenutil.DrawLine(screen, r.Max.X, r.Max.Y, r.Max.X, r.Min.Y, c)
-	ebitenutil.DrawLine(screen, r.Max.X, r.Min.Y, r.Min.X, r.Min.Y, c)
+	ebitenutil.DrawLine(screen, r.Min.X+1, r.Min.Y+1, r.Min.X+1, r.Max.Y-1, c)
+	ebitenutil.DrawLine(screen, r.Min.X+1, r.Max.Y-1, r.Max.X-1, r.Max.Y-1, c)
+	ebitenutil.DrawLine(screen, r.Max.X-1, r.Max.Y-1, r.Max.X-1, r.Min.Y+1, c)
+	ebitenutil.DrawLine(screen, r.Max.X-1, r.Min.Y+1, r.Min.X+1, r.Min.Y+1, c)
 }
 
 func drawPixelFilledRect(screen *ebiten.Image, r gfx.Rect, c color.Color) {
@@ -32,7 +32,7 @@ func drawRect(screen *ebiten.Image, x, y, w, h float64, c color.Color) {
 
 func (g *Game) drawEntities(screen *ebiten.Image) {
 
-	// Draw entities
+	// Draw entitief
 	for _, e := range g.filteredEntities(components.DrawableType, components.PosType) {
 		pos := g.entities.GetUnsafe(e, components.PosType).(*components.Pos)
 		s := g.entities.GetUnsafe(e, components.DrawableType).(*components.Drawable)
@@ -51,17 +51,19 @@ func (g *Game) drawEntities(screen *ebiten.Image) {
 
 		// For debug, add dot to mark position
 		ebitenutil.DrawRect(traceImg, pos.X, pos.Y, 1, 1, colornames.Red)
-
 	}
 
 	if hitbox {
-
 		// Draw hitboxes
-		// for _, e := range g.filteredEntities(components.HitboxType, components.PosType) {
-		// 	pos := g.entities.GetUnsafe(e, components.PosType).(*components.Pos)
-		// 	hb := g.entities.GetUnsafe(e, components.HitboxType).(*components.Hitbox)
-		// 	// fmt.Println(e, pos, hb)
-		// 	// drawPixelRect(screen, hb.Moved(pos.Vec), colornames.Red)
-		// }
+		for _, e := range g.filteredEntities(components.HitboxType, components.PosType) {
+			pos := g.entities.GetUnsafe(e, components.PosType).(*components.Pos)
+			hb := g.entities.GetUnsafe(e, components.HitboxType).(*components.Hitbox)
+
+			if hb.Properties["allow_from_down"] {
+				drawPixelRect(screen, hb.Moved(pos.Vec), colornames.Turquoise)
+			} else {
+				drawPixelRect(screen, hb.Moved(pos.Vec), colornames.Red)
+			}
+		}
 	}
 }
