@@ -9,7 +9,7 @@ import (
 	"github.com/peterhellberg/gfx"
 )
 
-func hitboxToRect(hb gfx.Rect) *resolv.Rectangle {
+func rectToShape(hb gfx.Rect) *resolv.Rectangle {
 	return resolv.NewRectangle(int32(hb.Min.X), int32(hb.Min.Y), int32(hb.W()), int32(hb.H()))
 }
 
@@ -32,7 +32,7 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 		scaler := hbMoved.Size().Scaled(factor)
 		resizedBox := hbMoved.Resized(gfx.V(0, 0), scaler)
 
-		s := hitboxToRect(resizedBox)
+		s := rectToShape(resizedBox)
 		// s.SetTags(e)
 		// s.SetData(hb)
 		tags := []string{e}
@@ -49,7 +49,7 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 		hb := g.entities.GetUnsafe(e, components.HitboxType).(*components.Hitbox)
 		hbMoved := hb.Moved(pos.Vec)
 		scaler := hb.Size().Scaled(factor)
-		r := hitboxToRect(hbMoved.Resized(gfx.V(0, 0), scaler))
+		r := rectToShape(hbMoved.Resized(gfx.V(0, 0), scaler))
 
 		// Check collision vertically
 

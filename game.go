@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"image"
 	"image/color"
@@ -9,6 +8,7 @@ import (
 	"log"
 	"math/rand"
 	"strconv"
+	"strings"
 
 	"github.com/kyeett/gomponents/components"
 	"github.com/kyeett/tiled"
@@ -16,8 +16,6 @@ import (
 	"golang.org/x/image/colornames"
 
 	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/inpututil"
-	"github.com/kyeett/ebitenconsole"
 )
 
 var (
@@ -43,42 +41,6 @@ func drawTrail(screen *ebiten.Image) {
 	screen.DrawImage(traceImg, op)
 }
 
-func (g *Game) update(screen *ebiten.Image) error {
-	ebitenconsole.CheckInput()
-
-	if inpututil.IsKeyJustPressed(ebiten.KeyTab) {
-		return errors.New("Player exited game")
-	}
-
-	// Inspired by https://forums.tigsource.com/index.php?topic=46289.msg1386874#msg1386874
-	// UpdatePreMovement
-	// Apply friction, gravity and keypresses
-	g.updatePreMovement()
-	g.updateMovement(screen)
-
-	// For each Entity
-	if ebiten.IsDrawingSkipped() {
-		return nil
-	}
-	g.updatePostMovement()
-
-	// Draw background
-	screen.DrawImage(backgroundImg, &ebiten.DrawImageOptions{})
-
-	// screen.DrawImage(foregroundImg, &ebiten.DrawImageOptions{})
-	// Draw entities
-	g.drawEntities(screen)
-
-	g.drawPlayerVision(screen)
-
-	// Draw foreground
-	g.drawHitboxes(screen)
-
-	g.drawScoreboard(screen)
-	g.drawDebugInfo(screen)
-	return nil
-}
-
 func (g *Game) drawHitboxes(screen *ebiten.Image) {
 	if hitbox {
 		// Draw hitboxes
@@ -92,6 +54,7 @@ func (g *Game) drawHitboxes(screen *ebiten.Image) {
 				drawPixelRect(screen, hb.Moved(pos.Vec), colornames.Red)
 			}
 		}
+
 	}
 }
 
@@ -276,29 +239,67 @@ func NewGame(worldFile string) Game {
 			g.newPlayer(gfx.V(float64(o.X), float64(o.Y)))
 		case "teleport":
 			g.newTeleport(o)
+		case "trigger":
+			g.newTrigger(o)
 		}
 	}
 
 	return g
 }
 
+func parseDirections(s string) byte {
+	if s == "" {
+		return components.DirUp | components.DirDown | components.DirLeft | components.DirRight
+	}
+
+	var dir byte
+	if strings.Contains(s, "U") {
+		dir |= components.DirUp
+	}
+	if strings.Contains(s, "D") {
+		dir |= components.DirDown
+	}
+	if strings.Contains(s, "L") {
+		dir |= components.DirLeft
+	}
+	if strings.Contains(s, "R") {
+		dir |= components.DirRight
+	}
+	return dir
+}
+
+func (g *Game) newTrigger(o tiled.Object) {
+	id := fmt.Sprintf("%d", rand.Intn(1000000))
+
+	trigger := components.Trigger{
+		Rect: gfx.R(float64(o.X), float64(o.Y), float64(o.X+o.Width), float64(o.Y+o.Height)),
+	}
+
+	for _, p := range o.Properties.Property {
+		switch p.Name {
+		case "scenario":
+			trigger.Scenario = p.Value
+		case "dir":
+			trigger.Direction = parseDirections(p.Value)
+		}
+	}
+
+	// g.entities.Add(id, components)
+
+	g.entities.Add(id, trigger)
+	g.entityList = append(g.entityList, id)
+	fmt.Printf("adding trigger: %v\n", trigger)
+}
+
 func (g *Game) newTeleport(o tiled.Object) {
 
 	id := fmt.Sprintf("%d", rand.Intn(1000000))
-	// g.entities.Add(id, components.Scenario{
-	// 	F: func() bool {
-	// 		pos := g.entities.GetUnsafe(playerID, components.PosType).(*components.Pos)
-
-	// 		return pos.Y > float64(g.Height)
-	// 	},
-	// })
 
 	teleport := components.Teleporting{
 		Name: o.Name,
 		Pos:  gfx.V(float64(o.X), float64(o.Y)),
 	}
 
-	fmt.Println(o.Name)
 	for _, p := range o.Properties.Property {
 		switch p.Name {
 		case "target":
@@ -311,12 +312,12 @@ func (g *Game) newTeleport(o tiled.Object) {
 			teleport.Pos.Y = float64(o.Y + dy)
 		}
 	}
-	fmt.Println(teleport)
 
 	g.entities.Add(id, teleport)
 	g.entities.Add(id, components.Pos{Vec: gfx.V(float64(o.X), float64(o.Y))})
 	g.entities.Add(id, components.NewHitbox(gfx.R(0, 0, float64(o.Width), float64(o.Height))))
 	g.entityList = append(g.entityList, id)
+	fmt.Printf("adding teleport: %v\n", teleport)
 }
 
 func (g *Game) parseTileProperty(id string, props []tiled.Property) {
