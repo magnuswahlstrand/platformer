@@ -151,3 +151,18 @@ func (g *Game) drawEntities(screen *ebiten.Image) {
 		ebitenutil.DrawRect(traceImg, pos.X, pos.Y, 1, 1, colornames.Red)
 	}
 }
+
+func (g *Game) drawBackground(camera *ebiten.Image) {
+	cr := g.getCameraPosition()
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(float64(cr.Min.X), 0)
+	camera.DrawImage(backgroundImg.SubImage(cr).(*ebiten.Image), op)
+}
+
+func (g *Game) getCameraPosition() image.Rectangle {
+	pos := g.entities.GetUnsafe(playerID, components.PosType).(*components.Pos)
+	cx := int(pos.X - cameraWidth/2)
+	cx = min(g.Width-cameraWidth, cx)
+	cx = max(0, cx)
+	return image.Rect(cx, 0, cx+cameraWidth, cameraHeight)
+}

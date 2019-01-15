@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
+
+	"github.com/peterhellberg/gfx"
 
 	"golang.org/x/image/colornames"
 
@@ -47,7 +50,14 @@ func LostScreen(g *Game, screen *ebiten.Image) error {
 	return nil
 }
 
+var camera *ebiten.Image
+
+var i1, i2 int
+var tot1, tot2, tot3 time.Duration
+
 func GameLoop(g *Game, screen *ebiten.Image) error {
+
+	camera, _ = ebiten.NewImageFromImage(gfx.NewImage(g.Width, g.Height, colornames.Red), ebiten.FilterDefault)
 	ebitenconsole.CheckInput()
 
 	// Inspired by https://forums.tigsource.com/index.php?topic=46289.msg1386874#msg1386874
@@ -55,7 +65,7 @@ func GameLoop(g *Game, screen *ebiten.Image) error {
 	// Apply friction, gravity and keypresses
 	g.updatePreMovement()
 
-	g.updateMovement(screen)
+	g.updateMovement(camera)
 
 	// For each Entity
 	if ebiten.IsDrawingSkipped() {
@@ -64,22 +74,39 @@ func GameLoop(g *Game, screen *ebiten.Image) error {
 	g.updatePostMovement()
 
 	// Draw background
-	screen.DrawImage(backgroundImg, &ebiten.DrawImageOptions{})
 
-	// screen.DrawImage(foregroundImg, &ebiten.DrawImageOptions{})
+	// camera.DrawImage(foregroundImg, &ebiten.DrawImageOptions{})
+	g.drawBackground(camera)
+
 	// Draw entities
-	g.drawEntities(screen)
+	g.drawEntities(camera)
 
-	g.drawPlayerVision(screen)
+	g.drawPlayerVision(camera)
 
 	// Draw foreground
 
 	// Check for collision with triggers
-	g.checkAndDrawTriggers(screen)
+	g.checkAndDrawTriggers(camera)
 
-	g.drawHitboxes(screen)
+	g.drawHitboxes(camera)
 
+	cr := g.getCameraPosition()
+	screen.DrawImage(camera.SubImage(cr).(*ebiten.Image), &ebiten.DrawImageOptions{})
 	g.drawScoreboard(screen)
 	g.drawDebugInfo(screen)
+
 	return nil
+}
+
+func max(a, b int) int {
+	if b > a {
+		return b
+	}
+	return a
+}
+func min(a, b int) int {
+	if b < a {
+		return b
+	}
+	return a
 }

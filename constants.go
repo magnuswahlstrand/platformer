@@ -12,3 +12,8 @@ var (
 // Flags
 var hitbox = false
 var bnw = false
+
+const (
+	cameraWidth  = 256
+	cameraHeight = 192
+)

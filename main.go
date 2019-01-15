@@ -22,7 +22,7 @@ func main() {
 	// save = func() error {
 	// 	g.entities
 	// }
-	screenWidth, screenHeight := g.Width, g.Height
+	// screenWidth, screenHeight := g.Width, g.Height
 	ebitenconsole.FloatVar(&g.Gravity, "g", "world gravity")
 	ebitenconsole.BoolVar(&hitbox, "h", "show hitboxes")
 	ebitenconsole.BoolVar(&bnw, "bnw", "change game palette")
@@ -30,7 +30,7 @@ func main() {
 	// ebitenconsole.FuncVar(load, "load", "load state")
 	currentTime = time.Now()
 
-	if err := ebiten.Run(g.update, screenWidth, screenHeight, 3, "Aseprite demo"); err != nil {
+	if err := ebiten.Run(g.update, cameraWidth, cameraHeight, 3, "Aseprite demo"); err != nil {
 		logrus.Error(err)
 	}
 }
