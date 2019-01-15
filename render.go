@@ -5,8 +5,13 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"log"
 	"text/tabwriter"
 	"time"
+
+	"github.com/golang/freetype/truetype"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/gofont/gomono"
 
 	"github.com/kyeett/ebitenconsole"
 	"github.com/kyeett/gomponents/components"
@@ -15,7 +20,52 @@ import (
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/hajimehoshi/ebiten/text"
 )
+
+var fontFace5 font.Face
+var fontFace7 font.Face
+var fontFace9 font.Face
+var fontFace11 font.Face
+
+func init() {
+	fnt, err := truetype.Parse(gomono.TTF)
+	if err != nil {
+		log.Fatal("loading font:", err)
+	}
+	const dpi = 144
+	fontFace5 = truetype.NewFace(fnt, &truetype.Options{
+		Size:    5,
+		DPI:     dpi,
+		Hinting: font.HintingNone,
+	})
+	fontFace7 = truetype.NewFace(fnt, &truetype.Options{
+		Size:    7,
+		DPI:     dpi,
+		Hinting: font.HintingNone,
+	})
+	fontFace9 = truetype.NewFace(fnt, &truetype.Options{
+		Size:    9,
+		DPI:     dpi,
+		Hinting: font.HintingNone,
+	})
+	fontFace11 = truetype.NewFace(fnt, &truetype.Options{
+		Size:    11,
+		DPI:     dpi,
+		Hinting: font.HintingNone,
+	})
+}
+
+func drawCenterText(screen *ebiten.Image, txt string, face font.Face, c color.Color, offsetY ...int) {
+	y := 0
+	for _, o := range offsetY {
+		y += o
+	}
+	size := face.Metrics().Height.Ceil() / 2
+	width := int(1.135 * float64(len(txt)*size))
+	w, h := screen.Size()
+	text.Draw(screen, txt, face, (w-width)/2, (h+size)/2+y, c)
+}
 
 func drawPixelRect(screen *ebiten.Image, r gfx.Rect, c color.Color) {
 	ebitenutil.DrawLine(screen, r.Min.X+1, r.Min.Y+1, r.Min.X+1, r.Max.Y-1, c)

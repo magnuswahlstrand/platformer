@@ -12,12 +12,6 @@ import (
 	ase "github.com/kyeett/GoAseprite"
 )
 
-type Player struct {
-	Ase       ase.File
-	Sprite    *ebiten.Image
-	direction string
-}
-
 var playerFile ase.File
 var pImage *ebiten.Image
 var tileImage *ebiten.Image

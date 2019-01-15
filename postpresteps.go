@@ -20,14 +20,14 @@ func (g *Game) updatePreMovement() {
 		d := g.entities.GetUnsafe(e, components.DirectionType).(*components.Direction)
 		switch {
 		case inpututil.IsKeyJustPressed(ebiten.KeyUp):
-			v.Y = -5
+			v.Y = -jumpSpeed
 
 		case ebiten.IsKeyPressed(ebiten.KeyRight):
-			v.X += 0.3
+			v.X += horizontalAcceleration
 			d.D = 1
 
 		case ebiten.IsKeyPressed(ebiten.KeyLeft):
-			v.X -= 0.3
+			v.X -= horizontalAcceleration
 			d.D = -1
 		}
 	}

@@ -2,11 +2,13 @@ package main
 
 // Constants
 var (
-	gravityConst = 0.18
-	bouncyConst  = -4.0
-	teleportSlow = 0.6
+	gravityConst           = 0.25
+	bouncyConst            = -4.0
+	teleportSlow           = 0.6
+	horizontalAcceleration = 0.3
+	jumpSpeed              = 5.0
 )
 
 // Flags
-var hitbox = true
+var hitbox = false
 var bnw = false

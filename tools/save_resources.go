@@ -37,7 +37,8 @@ func main() {
 	}
 	defer f.Close()
 
-	fmt.Fprintln(f, "package resources\n")
+	fmt.Fprintln(f, "package resources")
+	fmt.Fprintln(f, "")
 	for _, r := range resources {
 		content, err := ioutil.ReadFile(r.path)
 		if err != nil {

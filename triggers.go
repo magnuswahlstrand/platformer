@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"strings"
 
-	"github.com/peterhellberg/gfx"
+	"github.com/kyeett/gomponents/direction"
+	"github.com/kyeett/tiled"
 
 	"github.com/hajimehoshi/ebiten"
 
@@ -12,32 +15,13 @@ import (
 	"github.com/kyeett/gomponents/components"
 )
 
-func direction(v gfx.Vec) byte {
-	var dir byte
-	if v.X > 0 {
-		dir |= components.DirRight
-	}
-
-	if v.X < 0 {
-		dir |= components.DirLeft
-	}
-
-	if v.Y > 0 {
-		dir |= components.DirUp
-	}
-
-	if v.Y < 0 {
-		dir |= components.DirDown
-	}
-	return dir
-}
-
 func (g *Game) checkAndDrawTriggers(screen *ebiten.Image) {
 	pos := g.entities.GetUnsafe(playerID, components.PosType).(*components.Pos)
 	v := g.entities.GetUnsafe(playerID, components.VelocityType).(*components.Velocity)
 	hb := g.entities.GetUnsafe(playerID, components.HitboxType).(*components.Hitbox)
 
-	playerDirection := direction(v.Vec)
+	playerDirection := direction.FromVec(v.Vec)
+
 	playerShape := rectToShape(hb.Moved(pos.Vec))
 
 	for _, e := range g.filteredEntities(components.TriggerType) {
@@ -46,8 +30,22 @@ func (g *Game) checkAndDrawTriggers(screen *ebiten.Image) {
 		tRect := rectToShape(t.Rect)
 		var collided bool
 		if playerShape.WouldBeColliding(tRect, 0, 0) && t.Direction&playerDirection > 0 {
-			fmt.Println(components.DirString(playerDirection), components.DirString(t.Direction), "res", components.DirString(t.Direction&playerDirection), t.Direction&playerDirection)
+			fmt.Println(playerDirection, t.Direction, "res", t.Direction&playerDirection, t.Direction&playerDirection)
 			fmt.Println("triggered!")
+
+			switch {
+			case t.Scenario == "victory":
+				g.currentScene = "victory"
+			case strings.Contains(t.Scenario, "world:"):
+				// Load initial size from first world map
+				worldFile := strings.Replace(t.Scenario, "world:", "", -1)
+				worldMap, err := tiled.MapFromFile(fmt.Sprintf("%s/%s.tmx", g.baseDir, worldFile))
+				if err != nil {
+					log.Fatal(err)
+				}
+				g.initializeWorld(worldMap)
+			}
+
 			collided = true
 		}
 
@@ -57,6 +55,5 @@ func (g *Game) checkAndDrawTriggers(screen *ebiten.Image) {
 		} else {
 			drawPixelRect(screen, t.Rect, colornames.Thistle)
 		}
-
 	}
 }
