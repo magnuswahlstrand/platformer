@@ -78,7 +78,7 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 			}
 
 			if g.entities.HasComponents(t, components.BouncyType) {
-				v.Y = -4
+				v.Y = bouncyConst
 			} else {
 				v.Y = 0
 			}
@@ -102,19 +102,17 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 }
 
 func (g *Game) handleKilled(t string) {
-	pos := g.entities.GetUnsafe(t, components.PosType).(*components.Pos)
-	pos.Y += 6
 	g.entities.Remove(t, components.HitboxType)
 	g.entities.Add(t, components.Rotated{0.0})
 	g.entities.Add(t, components.Scenario{
 		F: func() bool {
-			pas := g.entities.GetUnsafe(t, components.PosType).(*components.Pos)
-			pas.Y++
+			pos := g.entities.GetUnsafe(t, components.PosType).(*components.Pos)
+			pos.Y++
 
 			rot := g.entities.GetUnsafe(t, components.RotatedType).(*components.Rotated)
 			rot.Rotate(0.1)
 
-			return pas.Y > float64(g.Height)
+			return pos.Y > float64(g.Height)
 		},
 	})
 }
@@ -124,6 +122,23 @@ func (g *Game) handleCollidedX(e, t string) {
 	v := g.entities.GetUnsafe(e, components.VelocityType).(*components.Velocity)
 	if g.entities.HasComponents(t, components.HazardType) {
 		g.Reset()
+		return
+	}
+
+	if g.entities.HasComponents(t, components.TeleportingType) {
+		fmt.Println("Yay")
+		t1 := g.entities.GetUnsafe(t, components.TeleportingType).(*components.Teleporting)
+
+		// // Find matching teleport
+		for _, o2 := range g.filteredEntities(components.TeleportingType) {
+			t2 := g.entities.GetUnsafe(o2, components.TeleportingType).(*components.Teleporting)
+			if t1.Target == t2.Name {
+				pos := g.entities.GetUnsafe(e, components.PosType).(*components.Pos)
+
+				pos.Vec = t2.Pos
+				v.Vec.X = teleportSlow * v.Vec.X
+			}
+		}
 		return
 	}
 

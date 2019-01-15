@@ -63,7 +63,6 @@ func (g *Game) update(screen *ebiten.Image) error {
 	g.updatePostMovement()
 
 	// Draw background
-
 	screen.DrawImage(backgroundImg, &ebiten.DrawImageOptions{})
 
 	// screen.DrawImage(foregroundImg, &ebiten.DrawImageOptions{})
@@ -73,7 +72,7 @@ func (g *Game) update(screen *ebiten.Image) error {
 	g.drawPlayerVision(screen)
 
 	// Draw foreground
-	// screen.DrawImage(foregroundImg, &ebiten.DrawImageOptions{})
+	g.drawHitboxes(screen)
 
 	g.drawScoreboard(screen)
 	g.drawDebugInfo(screen)
@@ -114,7 +113,6 @@ func (g *Game) drawPlayerVision(screen *ebiten.Image) {
 
 type Game struct {
 	Gravity       float64
-	player        *Player
 	entityList    []string
 	entities      *components.Map
 	Width, Height int
@@ -132,25 +130,26 @@ func (g *Game) filteredEntities(types ...components.Type) []string {
 
 var playerID = "abc123"
 
-func NewGame() Game {
+func NewGame(worldFile string) Game {
 	g := Game{
-		Gravity:    0.18,
+		Gravity:    gravityConst,
 		entities:   components.NewMap(),
 		entityList: []string{},
 	}
 
-	tmxPath := "../tiled/world6.tmx"
 	fmt.Println("nay")
-	worldMap, err := tiled.MapFromFile(tmxPath)
+	worldMap, err := tiled.MapFromFile(worldFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("yay")
 
 	g.Width, g.Height = worldMap.Size()
-	fmt.Println(g.Width, g.Height)
 
 	traceImg, _ = ebiten.NewImage(g.Width, g.Height, ebiten.FilterDefault)
+	backgroundImg, _ = ebiten.NewImage(g.Width, g.Height, ebiten.FilterDefault)
+	foregroundImg, _ = ebiten.NewImage(g.Width, g.Height, ebiten.FilterDefault)
+
 	tmpImg, _ = ebiten.NewImage(g.Width, g.Height, ebiten.FilterDefault)
 	scoreboardImg, _ = ebiten.NewImage(g.Width, 16, ebiten.FilterDefault)
 	scoreboardImg.Fill(color.Black)
@@ -271,11 +270,53 @@ func NewGame() Game {
 	}
 
 	for _, o := range worldMap.FilteredObjectsType() {
-		fmt.Println("filtered", o)
-		g.newPlayer(gfx.V(float64(o.X), float64(o.Y)))
+
+		switch o.Type {
+		case "player":
+			g.newPlayer(gfx.V(float64(o.X), float64(o.Y)))
+		case "teleport":
+			g.newTeleport(o)
+		}
 	}
 
 	return g
+}
+
+func (g *Game) newTeleport(o tiled.Object) {
+
+	id := fmt.Sprintf("%d", rand.Intn(1000000))
+	// g.entities.Add(id, components.Scenario{
+	// 	F: func() bool {
+	// 		pos := g.entities.GetUnsafe(playerID, components.PosType).(*components.Pos)
+
+	// 		return pos.Y > float64(g.Height)
+	// 	},
+	// })
+
+	teleport := components.Teleporting{
+		Name: o.Name,
+		Pos:  gfx.V(float64(o.X), float64(o.Y)),
+	}
+
+	fmt.Println(o.Name)
+	for _, p := range o.Properties.Property {
+		switch p.Name {
+		case "target":
+			teleport.Target = p.Value
+		case "dx":
+			dx, _ := strconv.Atoi(p.Value)
+			teleport.Pos.X = float64(o.X + dx)
+		case "dy":
+			dy, _ := strconv.Atoi(p.Value)
+			teleport.Pos.Y = float64(o.Y + dy)
+		}
+	}
+	fmt.Println(teleport)
+
+	g.entities.Add(id, teleport)
+	g.entities.Add(id, components.Pos{Vec: gfx.V(float64(o.X), float64(o.Y))})
+	g.entities.Add(id, components.NewHitbox(gfx.R(0, 0, float64(o.Width), float64(o.Height))))
+	g.entityList = append(g.entityList, id)
 }
 
 func (g *Game) parseTileProperty(id string, props []tiled.Property) {
