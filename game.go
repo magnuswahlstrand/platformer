@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/color"
@@ -8,10 +9,13 @@ import (
 	"log"
 	"math/rand"
 	"path/filepath"
+	"strings"
 
 	"github.com/kyeett/gomponents/components"
+	resources "github.com/kyeett/platformer/assets"
 	"github.com/kyeett/tiled"
 	"github.com/peterhellberg/gfx"
+	"golang.org/x/image/colornames"
 
 	"github.com/hajimehoshi/ebiten"
 )
@@ -51,11 +55,7 @@ func NewGame(worldFile string) Game {
 	}
 	g.newPlayer()
 
-	// Load initial size from first world map
-	worldMap, err := tiled.MapFromFile(worldFile)
-	if err != nil {
-		log.Fatal(err)
-	}
+	worldMap := g.loadWorldMap(worldFile)
 
 	g.Width, g.Height = worldMap.Size()
 	traceImg, _ = ebiten.NewImage(g.Width, g.Height, ebiten.FilterDefault)
@@ -75,6 +75,8 @@ func NewGame(worldFile string) Game {
 }
 
 func (g *Game) initializeWorld(worldMap *tiled.Map) {
+	camera, _ = ebiten.NewImageFromImage(gfx.NewImage(g.Width, g.Height, colornames.Red), ebiten.FilterDefault)
+
 	g.Width, g.Height = worldMap.Size()
 	// Remove all existing entitites, except the player
 	for _, e := range g.entityList {
@@ -85,7 +87,11 @@ func (g *Game) initializeWorld(worldMap *tiled.Map) {
 	}
 	g.entityList = []string{}
 
-	img, err := worldMap.LoadImage(0)
+	path, err := worldMap.ImagePath(0)
+
+	// Workaround
+	path = strings.Replace(path, "../platformer/", "", -1)
+	img, _, err := image.Decode(bytes.NewReader(resources.LookupFatal(path)))
 	if err != nil {
 		log.Fatal("decode image: %s")
 	}
@@ -106,7 +112,6 @@ func (g *Game) initializeWorld(worldMap *tiled.Map) {
 		if layer.Name != "background" {
 			continue
 		}
-		fmt.Println(layer)
 		img := gfx.NewImage(g.Width, g.Height, color.Black)
 		for _, t := range worldMap.LayerTiles(layer) {
 			sRect := image.Rect(t.SrcX, t.SrcY, t.SrcX+t.Width, t.SrcY+t.Height)
@@ -193,7 +198,6 @@ func (g *Game) initializeWorld(worldMap *tiled.Map) {
 				}
 				g.entities.Add(id, b)
 
-				fmt.Println("Adding at", box)
 			}
 
 			g.parseTileProperty(id, t.Properties.Property)
@@ -207,7 +211,6 @@ func (g *Game) initializeWorld(worldMap *tiled.Map) {
 		switch o.Type {
 		case "player":
 			g.setPlayerStartingPos(gfx.V(float64(o.X), float64(o.Y)))
-
 		case "teleport":
 			g.newTeleport(o)
 		case "trigger":

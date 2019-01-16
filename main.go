@@ -39,6 +39,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	if err := ebiten.Run(g.update, cameraWidth, cameraHeight, 3, "Aseprite demo"); err != nil {
 		logrus.Error(err)
 	}

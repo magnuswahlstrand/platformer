@@ -105,7 +105,7 @@ func (g *Game) handleKilled(t string) {
 	g.entities.Remove(t, components.HitboxType)
 	g.entities.Add(t, components.Rotated{0.0})
 
-	playAudio(bounceSound)
+	musicPlayer.PlayAudio(bounceSound)
 	g.entities.Add(t, components.Scenario{
 		F: func() bool {
 			pos := g.entities.GetUnsafe(t, components.PosType).(*components.Pos)

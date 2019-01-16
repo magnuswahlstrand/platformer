@@ -47,7 +47,7 @@ func (g *Game) newTrigger(o tiled.Object) {
 
 	g.entities.Add(id, trigger)
 	g.entityList = append(g.entityList, id)
-	fmt.Printf("adding trigger: %v\n", trigger)
+	// fmt.Printf("adding trigger: %v\n", trigger)
 }
 
 func (g *Game) newTeleport(o tiled.Object) {
@@ -76,7 +76,7 @@ func (g *Game) newTeleport(o tiled.Object) {
 	g.entities.Add(id, components.Pos{Vec: gfx.V(float64(o.X), float64(o.Y))})
 	g.entities.Add(id, components.NewHitbox(gfx.R(0, 0, float64(o.Width), float64(o.Height))))
 	g.entityList = append(g.entityList, id)
-	fmt.Printf("adding teleport: %v\n", teleport)
+	// fmt.Printf("adding teleport: %v\n", teleport)
 }
 
 func (g *Game) parseTileProperty(id string, props []tiled.Property) {
@@ -98,7 +98,6 @@ func (g *Game) parseTileProperty(id string, props []tiled.Property) {
 				g.entities.Add(id, components.Killable{})
 			}
 		}
-		fmt.Println(p.Name, p.Value)
 	}
 }
 
@@ -160,7 +159,6 @@ func (g *Game) newBox(id string, v gfx.Vec, name string) {
 	}
 
 	box := gfx.R(0, 0, 32, 32)
-	fmt.Println("Adding 2at", box)
 	g.entities.Add(id, components.NewHitbox(box))
 	g.entities.Add(id, components.Pos{v})
 	g.entities.Add(id, components.Drawable{tileImage.SubImage((image.Rect(32*x, 32*y, 32*(x+1), 32*(y+1)))).(*ebiten.Image)})

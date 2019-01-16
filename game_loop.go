@@ -4,15 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"path/filepath"
 	"time"
-
-	"github.com/peterhellberg/gfx"
 
 	"golang.org/x/image/colornames"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/inpututil"
 	"github.com/kyeett/ebitenconsole"
+	resources "github.com/kyeett/platformer/assets"
 	"github.com/kyeett/tiled"
 )
 
@@ -25,7 +25,7 @@ func (g *Game) update(screen *ebiten.Image) error {
 		musicPlayer.audioPlayer.SetVolume(1 - musicPlayer.audioPlayer.Volume())
 	}
 
-	if musicPlayer.audioPlayer.IsPlaying() {
+	if musicPlayer.audioPlayer != nil && musicPlayer.audioPlayer.IsPlaying() {
 		musicPlayer.current = musicPlayer.audioPlayer.Current()
 	}
 
@@ -34,14 +34,26 @@ func (g *Game) update(screen *ebiten.Image) error {
 		// Load initial size from first world map
 
 		g.currentScene = "game"
-		worldFile := "world6"
-		worldMap, err := tiled.MapFromFile(fmt.Sprintf("%s/%s.tmx", g.baseDir, worldFile))
-		if err != nil {
-			log.Fatal(err)
-		}
+		worldFile := "world6.tmx"
+		worldMap := g.loadWorldMap(worldFile)
 		g.initializeWorld(worldMap)
 	}
 	return g.scenes[g.currentScene](g, screen)
+}
+
+func (g *Game) loadWorldMap(filename string) *tiled.Map {
+	// Load initial size from first world map
+	readFromMap := func(filename string) ([]byte, error) {
+		fmt.Println("load tileset", filename)
+		return resources.LookupFatal(g.baseDir + "/" + filename), nil
+	}
+
+	fmt.Println("load tilemap", filename)
+	worldMap, err := tiled.MapFromBytes(resources.LookupFatal(g.baseDir+"/"+filepath.Base(filename)), readFromMap)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return worldMap
 }
 
 func VictoryScreen(g *Game, screen *ebiten.Image) error {
@@ -65,7 +77,8 @@ var tot1, tot2, tot3 time.Duration
 
 func GameLoop(g *Game, screen *ebiten.Image) error {
 
-	camera, _ = ebiten.NewImageFromImage(gfx.NewImage(g.Width, g.Height, colornames.Red), ebiten.FilterDefault)
+	t1 := time.Now()
+	camera.Clear()
 	ebitenconsole.CheckInput()
 
 	// Inspired by https://forums.tigsource.com/index.php?topic=46289.msg1386874#msg1386874
@@ -73,6 +86,7 @@ func GameLoop(g *Game, screen *ebiten.Image) error {
 	// Apply friction, gravity and keypresses
 	g.updatePreMovement()
 
+	t2 := time.Now()
 	g.updateMovement(camera)
 
 	// For each Entity
@@ -80,28 +94,37 @@ func GameLoop(g *Game, screen *ebiten.Image) error {
 		return nil
 	}
 	g.updatePostMovement()
+	t3 := time.Now()
 
 	// Draw background
 
 	// camera.DrawImage(foregroundImg, &ebiten.DrawImageOptions{})
 	g.drawBackground(camera)
+	t4 := time.Now()
 
 	// Draw entities
 	g.drawEntities(camera)
+	t5 := time.Now()
 
-	g.drawPlayerVision(camera)
+	// g.drawPlayerVision(camera)
 
 	// Draw foreground
 
 	// Check for collision with triggers
 	g.checkAndDrawTriggers(camera)
 
+	t6 := time.Now()
 	g.drawHitboxes(camera)
 
 	cr := g.getCameraPosition()
+
+	t7 := time.Now()
 	screen.DrawImage(camera.SubImage(cr).(*ebiten.Image), &ebiten.DrawImageOptions{})
 	g.drawScoreboard(screen)
 	g.drawDebugInfo(screen)
+	t8 := time.Now()
+
+	fmt.Printf("%10s %10s %10s %10s %10s %10s %10s, tot: %10s\n", t2.Sub(t1), t3.Sub(t2), t4.Sub(t3), t5.Sub(t4), t6.Sub(t5), t7.Sub(t6), t8.Sub(t7), t8.Sub(t1))
 
 	return nil
 }

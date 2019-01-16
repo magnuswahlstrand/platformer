@@ -2,11 +2,9 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/kyeett/gomponents/direction"
-	"github.com/kyeett/tiled"
 
 	"github.com/hajimehoshi/ebiten"
 
@@ -38,11 +36,9 @@ func (g *Game) checkAndDrawTriggers(screen *ebiten.Image) {
 				g.currentScene = "victory"
 			case strings.Contains(t.Scenario, "world:"):
 				// Load initial size from first world map
-				worldFile := strings.Replace(t.Scenario, "world:", "", -1)
-				worldMap, err := tiled.MapFromFile(fmt.Sprintf("%s/%s.tmx", g.baseDir, worldFile))
-				if err != nil {
-					log.Fatal(err)
-				}
+
+				worldFile := strings.Replace(t.Scenario, "world:", "", -1) + ".tmx"
+				worldMap := g.loadWorldMap(worldFile)
 				g.initializeWorld(worldMap)
 			}
 
@@ -51,7 +47,6 @@ func (g *Game) checkAndDrawTriggers(screen *ebiten.Image) {
 
 		// Draw triggers
 		if hitbox {
-
 			if collided {
 				drawPixelRect(screen, t.Rect, colornames.Red)
 			} else {

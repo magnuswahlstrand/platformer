@@ -33,6 +33,9 @@ type Player struct {
 var globalAudioContext *audio.Context
 
 func NewPlayer() (*Player, error) {
+
+	// return &Player{}, nil
+
 	var err error
 	globalAudioContext, err = audio.NewContext(sampleRate)
 	if err != nil {
@@ -92,13 +95,14 @@ func NewPlayer() (*Player, error) {
 	return player, nil
 }
 
-func playAudio(b []byte) {
+func (p *Player) PlayAudio(b []byte) {
 	if b == nil {
-		log.Fatal("tried to play empty bytes")
+		log.Println("tried to play empty bytes")
+		return
 	}
-	p, err := audio.NewPlayerFromBytes(globalAudioContext, b)
+	tmpP, err := audio.NewPlayerFromBytes(globalAudioContext, b)
 	if err != nil {
 		log.Fatal(err)
 	}
-	p.Play()
+	tmpP.Play()
 }
