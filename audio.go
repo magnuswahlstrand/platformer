@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	resources "github.com/kyeett/platformer/assets"
+
 	"github.com/hajimehoshi/ebiten/audio"
 	"github.com/hajimehoshi/ebiten/audio/mp3"
 	"github.com/hajimehoshi/ebiten/audio/wav"
@@ -37,17 +39,17 @@ func NewPlayer() (*Player, error) {
 		log.Fatal(err)
 	}
 
-	f, err := ioutil.ReadFile("assets/audio/getting-it-done-medium.mp3")
-	if err != nil {
-		log.Fatal(err)
-	}
+	// f, err := ioutil.ReadFile(resources.Lookup["assets/audio/getting-it-done-medium.mp3"])
+	// if err != nil {
+	// log.Fatal(err)
+	// }
 
 	const bytesPerSample = 4 // TODO: This should be defined in audio package
-	s, err := mp3.Decode(globalAudioContext, audio.BytesReadSeekCloser(f))
+	path := "assets/audio/getting-it-done-medium.mp3"
+	s, err := mp3.Decode(globalAudioContext, audio.BytesReadSeekCloser(resources.Lookup[path]))
 	if err != nil {
 		return nil, err
 	}
-
 	p, err := audio.NewPlayer(globalAudioContext, s)
 	if err != nil {
 		return nil, err
@@ -63,37 +65,26 @@ func NewPlayer() (*Player, error) {
 		player.total = 1
 	}
 
-	// Jumping sound
-	bytes, err := ioutil.ReadFile("assets/audio/jump_01.wav")
+	path = "assets/audio/jump_01.wav"
+	s2, err := wav.Decode(globalAudioContext, audio.BytesReadSeekCloser(resources.Lookup[path]))
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	s2, err := wav.Decode(globalAudioContext, audio.BytesReadSeekCloser(bytes))
-	if err != nil {
-		log.Fatal(err)
+		log.Fatal("failed to load", err)
 	}
 	b, err := ioutil.ReadAll(s2)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("failed to read", err)
 	}
 	jumpSound = b
 
-	// Jumping sound
-	bytes, err = ioutil.ReadFile("assets/audio/SFX_Jump_07.wav")
+	path = "assets/audio/SFX_Jump_07.wav"
+	s2, err = wav.Decode(globalAudioContext, audio.BytesReadSeekCloser(resources.Lookup[path]))
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	s2, err = wav.Decode(globalAudioContext, audio.BytesReadSeekCloser(bytes))
-	if err != nil {
-		log.Fatal(err)
+		log.Fatal("failed to load", err)
 	}
 	b, err = ioutil.ReadAll(s2)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("failed to read", err)
 	}
-
 	bounceSound = b
 
 	player.audioPlayer.Play()
@@ -103,7 +94,7 @@ func NewPlayer() (*Player, error) {
 
 func playAudio(b []byte) {
 	if b == nil {
-		log.Fatal("noo?")
+		log.Fatal("tried to play empty bytes")
 	}
 	p, err := audio.NewPlayerFromBytes(globalAudioContext, b)
 	if err != nil {

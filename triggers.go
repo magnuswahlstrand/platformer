@@ -50,10 +50,13 @@ func (g *Game) checkAndDrawTriggers(screen *ebiten.Image) {
 		}
 
 		// Draw triggers
-		if collided {
-			drawPixelRect(screen, t.Rect, colornames.Red)
-		} else {
-			drawPixelRect(screen, t.Rect, colornames.Thistle)
+		if hitbox {
+
+			if collided {
+				drawPixelRect(screen, t.Rect, colornames.Red)
+			} else {
+				drawPixelRect(screen, t.Rect, colornames.Thistle)
+			}
 		}
 	}
 }

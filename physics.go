@@ -128,7 +128,6 @@ func (g *Game) handleCollidedX(e, t string) {
 	}
 
 	if g.entities.HasComponents(t, components.TeleportingType) {
-		fmt.Println("Yay")
 		t1 := g.entities.GetUnsafe(t, components.TeleportingType).(*components.Teleporting)
 
 		// // Find matching teleport

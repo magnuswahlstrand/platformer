@@ -75,6 +75,7 @@ func NewGame(worldFile string) Game {
 }
 
 func (g *Game) initializeWorld(worldMap *tiled.Map) {
+	g.Width, g.Height = worldMap.Size()
 	// Remove all existing entitites, except the player
 	for _, e := range g.entityList {
 		if e == playerID {

@@ -166,3 +166,56 @@ func (g *Game) getCameraPosition() image.Rectangle {
 	cx = max(0, cx)
 	return image.Rect(cx, 0, cx+cameraWidth, cameraHeight)
 }
+
+func drawTrail(screen *ebiten.Image) {
+	op := &ebiten.DrawImageOptions{}
+	op.ColorM.Scale(1, 1, 1, 0.98)
+	tmpImg.Clear()
+	tmpImg.DrawImage(traceImg, op)
+	op.ColorM.Scale(1, 1, 1, 1)
+	traceImg.Clear()
+	traceImg.DrawImage(tmpImg, op)
+
+	// Draw trace
+	op = &ebiten.DrawImageOptions{}
+	screen.DrawImage(traceImg, op)
+}
+
+func (g *Game) drawHitboxes(screen *ebiten.Image) {
+	if hitbox {
+		// Draw hitboxes
+		for _, e := range g.filteredEntities(components.HitboxType, components.PosType) {
+			pos := g.entities.GetUnsafe(e, components.PosType).(*components.Pos)
+			hb := g.entities.GetUnsafe(e, components.HitboxType).(*components.Hitbox)
+
+			if hb.Properties["allow_from_down"] {
+				drawPixelRect(screen, hb.Moved(pos.Vec), colornames.Turquoise)
+			} else {
+				drawPixelRect(screen, hb.Moved(pos.Vec), colornames.Red)
+			}
+		}
+
+	}
+}
+
+func (g *Game) drawPlayerVision(screen *ebiten.Image) {
+	cr := g.getCameraPosition()
+
+	opt := &ebiten.DrawImageOptions{}
+	// opt.Address = ebiten.AddressRepeat
+
+	pos := g.entities.GetUnsafe(playerID, components.PosType).(*components.Pos)
+	opt.GeoM.Translate(pos.X-float64(visionImg.Bounds().Dx())/2+15, pos.Y-float64(visionImg.Bounds().Dy())/2+20)
+	opt.CompositeMode = ebiten.CompositeModeDestinationOut
+	tmp, _ := ebiten.NewImageFromImage(foregroundImg.SubImage(cr), ebiten.FilterDefault)
+
+	// tmp, _ := ebiten.NewImage(200, 200, ebiten.FilterDefault)
+	// tmp.Fill(colornames.Red)
+	// backgroundImg.DrawImage(visionImg, &ebiten.DrawImageOptions{})
+
+	tmp.DrawImage(visionImg, opt)
+
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(float64(cr.Min.X), 0)
+	screen.DrawImage(tmp, op)
+}
