@@ -106,7 +106,7 @@ func GameLoop(g *Game, screen *ebiten.Image) error {
 	g.drawEntities(camera)
 	t5 := time.Now()
 
-	// g.drawPlayerVision(camera)
+	g.drawPlayerVision(camera)
 
 	// Draw foreground
 
@@ -125,7 +125,6 @@ func GameLoop(g *Game, screen *ebiten.Image) error {
 	t8 := time.Now()
 
 	fmt.Printf("%10s %10s %10s %10s %10s %10s %10s, tot: %10s\n", t2.Sub(t1), t3.Sub(t2), t4.Sub(t3), t5.Sub(t4), t6.Sub(t5), t7.Sub(t6), t8.Sub(t7), t8.Sub(t1))
-
 	return nil
 }
 

@@ -203,19 +203,19 @@ func (g *Game) drawPlayerVision(screen *ebiten.Image) {
 
 	opt := &ebiten.DrawImageOptions{}
 	// opt.Address = ebiten.AddressRepeat
+	tmpVisionImg = foregroundImg //.SubImage(cr).(*ebiten.Image)
 
 	pos := g.entities.GetUnsafe(playerID, components.PosType).(*components.Pos)
 	opt.GeoM.Translate(pos.X-float64(visionImg.Bounds().Dx())/2+15, pos.Y-float64(visionImg.Bounds().Dy())/2+20)
+	opt.GeoM.Translate(float64(cr.Min.X), 0)
 	opt.CompositeMode = ebiten.CompositeModeDestinationOut
-	tmp, _ := ebiten.NewImageFromImage(foregroundImg.SubImage(cr), ebiten.FilterDefault)
 
 	// tmp, _ := ebiten.NewImage(200, 200, ebiten.FilterDefault)
 	// tmp.Fill(colornames.Red)
 	// backgroundImg.DrawImage(visionImg, &ebiten.DrawImageOptions{})
 
-	tmp.DrawImage(visionImg, opt)
+	tmpVisionImg.DrawImage(visionImg, opt)
 
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(cr.Min.X), 0)
-	screen.DrawImage(tmp, op)
+	screen.DrawImage(tmpVisionImg, op)
 }

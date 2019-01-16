@@ -25,6 +25,7 @@ var (
 	backgroundImg *ebiten.Image
 	foregroundImg *ebiten.Image
 	visionImg     *ebiten.Image
+	tmpVisionImg  *ebiten.Image
 	traceImg      *ebiten.Image
 	scoreboardImg *ebiten.Image
 )
@@ -76,6 +77,7 @@ func NewGame(worldFile string) Game {
 
 func (g *Game) initializeWorld(worldMap *tiled.Map) {
 	camera, _ = ebiten.NewImageFromImage(gfx.NewImage(g.Width, g.Height, colornames.Red), ebiten.FilterDefault)
+	tmpVisionImg, _ = ebiten.NewImageFromImage(gfx.NewImage(g.Width, g.Height, colornames.Red), ebiten.FilterDefault)
 
 	g.Width, g.Height = worldMap.Size()
 	// Remove all existing entitites, except the player
