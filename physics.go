@@ -104,13 +104,15 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 func (g *Game) handleKilled(t string) {
 	g.entities.Remove(t, components.HitboxType)
 	g.entities.Add(t, components.Rotated{0.0})
+
+	playAudio(bounceSound)
 	g.entities.Add(t, components.Scenario{
 		F: func() bool {
 			pos := g.entities.GetUnsafe(t, components.PosType).(*components.Pos)
-			pos.Y++
+			pos.Y += 2
 
 			rot := g.entities.GetUnsafe(t, components.RotatedType).(*components.Rotated)
-			rot.Rotate(0.1)
+			rot.Rotate(0.3)
 
 			return pos.Y > float64(g.Height)
 		},

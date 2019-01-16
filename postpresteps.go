@@ -21,6 +21,7 @@ func (g *Game) updatePreMovement() {
 		switch {
 		case inpututil.IsKeyJustPressed(ebiten.KeyUp):
 			v.Y = -jumpSpeed
+			playAudio(jumpSound)
 
 		case ebiten.IsKeyPressed(ebiten.KeyRight):
 			v.X += horizontalAcceleration

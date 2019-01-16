@@ -4,11 +4,16 @@ import (
 	"flag"
 	"fmt"
 	_ "image/png"
+	"log"
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/kyeett/ebitenconsole"
 	"github.com/sirupsen/logrus"
+)
+
+var (
+	musicPlayer *Player
 )
 
 func main() {
@@ -29,8 +34,13 @@ func main() {
 	// ebitenconsole.FuncVar(save, "save", "saves state")
 	// ebitenconsole.FuncVar(load, "load", "load state")
 	currentTime = time.Now()
-
+	var err error
+	musicPlayer, err = NewPlayer()
+	if err != nil {
+		log.Fatal(err)
+	}
 	if err := ebiten.Run(g.update, cameraWidth, cameraHeight, 3, "Aseprite demo"); err != nil {
 		logrus.Error(err)
 	}
+
 }

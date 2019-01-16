@@ -21,6 +21,14 @@ func (g *Game) update(screen *ebiten.Image) error {
 		return errors.New("Player exited game")
 	}
 
+	if inpututil.IsKeyJustPressed(ebiten.KeyM) {
+		musicPlayer.audioPlayer.SetVolume(1 - musicPlayer.audioPlayer.Volume())
+	}
+
+	if musicPlayer.audioPlayer.IsPlaying() {
+		musicPlayer.current = musicPlayer.audioPlayer.Current()
+	}
+
 	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
 
 		// Load initial size from first world map
