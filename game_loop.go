@@ -12,6 +12,7 @@ import (
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/inpututil"
 	"github.com/kyeett/ebitenconsole"
+	resources "github.com/kyeett/platformer/assets"
 	"github.com/kyeett/tiled"
 )
 
@@ -43,14 +44,14 @@ func (g *Game) update(screen *ebiten.Image) error {
 func (g *Game) loadWorldMap(filename string) *tiled.Map {
 	// Load initial size from first world map
 
-	// readFromMap := func(filename string) ([]byte, error) {
-	// 	fmt.Println("load tileset", filename)
-	// 	return resources.LookupFatal(g.baseDir + "/" + filename), nil
-	// }
-	// worldMap, err := tiled.MapFromBytes(resources.LookupFatal(g.baseDir+"/"+filepath.Base(filename)), readFromMap)
+	readFromMap := func(filename string) ([]byte, error) {
+		fmt.Println("load tileset", filename)
+		return resources.LookupFatal(g.baseDir + "/" + filename), nil
+	}
+	worldMap, err := tiled.MapFromBytes(resources.LookupFatal(g.baseDir+"/"+filepath.Base(filename)), readFromMap)
 
 	fmt.Println("load tilemap", filename)
-	worldMap, err := tiled.MapFromFile(g.baseDir + "/" + filepath.Base(filename))
+	// worldMap, err := tiled.MapFromFile(g.baseDir + "/" + filepath.Base(filename))
 	if err != nil {
 		log.Fatal(err)
 	}
