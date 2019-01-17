@@ -25,6 +25,10 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 		}
 		pos := g.entities.GetUnsafe(e, components.PosType).(*components.Pos)
 		hb := g.entities.GetUnsafe(e, components.HitboxType).(*components.Hitbox)
+		if hb.Properties["monsters_only"] {
+			continue
+		}
+
 		hbMoved := hb.Moved(pos.Vec)
 
 		// Debug things
@@ -99,6 +103,66 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 			pos.X += v.X
 		}
 	}
+
+	// Add possible collision entities
+	// for _, e := range g.filteredEntities(components.VelocityType) {
+	// 	if e == playerID {
+	// 		continue
+	// 	}
+	// 	pos := g.entities.GetUnsafe(e, components.PosType).(*components.Pos)
+	// 	// hb := g.entities.GetUnsafe(e, components.HitboxType).(*components.Hitbox)
+	// 	v := g.entities.GetUnsafe(e, components.VelocityType).(*components.Velocity)
+	// 	pos.Vec = pos.Add(v.Vec)
+	// }
+
+	g.updateMonsterMovement()
+
+}
+
+func (g *Game) updateMonsterMovement() {
+	var space resolv.Space
+	// Add possible collision entities
+	for _, e := range g.filteredEntities(components.HitboxType) {
+		hb := g.entities.GetUnsafe(e, components.HitboxType).(*components.Hitbox)
+		if hb.Properties["monsters_only"] != true {
+			continue
+		}
+		pos := g.entities.GetUnsafe(e, components.PosType).(*components.Pos)
+
+		hbMoved := hb.Moved(pos.Vec)
+		scaler := hbMoved.Size().Scaled(factor)
+		resizedBox := hbMoved.Resized(gfx.V(0, 0), scaler)
+
+		s := rectToShape(resizedBox)
+		tags := []string{e}
+		s.SetTags(tags...)
+		space.AddShape(s)
+	}
+
+	for _, e := range g.filteredEntities(components.HitboxType, components.VelocityType) {
+		if e == playerID {
+			continue
+		}
+		pos := g.entities.GetUnsafe(e, components.PosType).(*components.Pos)
+		v := g.entities.GetUnsafe(e, components.VelocityType).(*components.Velocity)
+		hb := g.entities.GetUnsafe(e, components.HitboxType).(*components.Hitbox)
+		hbMoved := hb.Moved(pos.Vec)
+		scaler := hb.Size().Scaled(factor)
+		r := rectToShape(hbMoved.Resized(gfx.V(0, 0), scaler))
+
+		if res := space.Resolve(r, 0, int32(factor*v.Y)); res.Colliding() && !res.Teleporting {
+			v.Y = -v.Y
+		} else {
+			pos.Y += v.Y
+		}
+
+		if res := space.Resolve(r, int32(factor*v.X), 0); res.Colliding() && !res.Teleporting {
+			v.X = -v.X
+		} else {
+			pos.X += v.X
+		}
+	}
+
 }
 
 func (g *Game) handleKilled(t string) {
@@ -117,6 +181,7 @@ func (g *Game) handleKilled(t string) {
 			return pos.Y > float64(g.Height)
 		},
 	})
+
 }
 
 func (g *Game) handleCollidedX(e, t string) {

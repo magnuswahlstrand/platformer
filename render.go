@@ -144,6 +144,15 @@ func (g *Game) drawEntities(screen *ebiten.Image) {
 			op.GeoM.Translate(float64(w/2), float64(h/2))
 		}
 
+		if g.entities.HasComponents(e, components.VelocityType) && e != playerID {
+			v := g.entities.GetUnsafe(e, components.VelocityType).(*components.Velocity)
+			w, _ := s.Size()
+			if v.X > 0 {
+				op.GeoM.Translate(float64(-w), 0)
+				op.GeoM.Scale(-1, 1)
+			}
+		}
+
 		op.GeoM.Translate(pos.X, pos.Y)
 		screen.DrawImage(img, op)
 
@@ -188,9 +197,13 @@ func (g *Game) drawHitboxes(screen *ebiten.Image) {
 			pos := g.entities.GetUnsafe(e, components.PosType).(*components.Pos)
 			hb := g.entities.GetUnsafe(e, components.HitboxType).(*components.Hitbox)
 
-			if hb.Properties["allow_from_down"] {
+			switch {
+			case hb.Properties["allow_from_down"]:
 				drawPixelRect(screen, hb.Moved(pos.Vec), colornames.Turquoise)
-			} else {
+			case hb.Properties["monsters_only"]:
+				drawPixelRect(screen, hb.Moved(pos.Vec), colornames.Greenyellow)
+
+			default:
 				drawPixelRect(screen, hb.Moved(pos.Vec), colornames.Red)
 			}
 		}

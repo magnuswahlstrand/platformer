@@ -21,6 +21,7 @@ import (
 )
 
 var (
+	sImg          *ebiten.Image
 	tmpImg        *ebiten.Image
 	backgroundImg *ebiten.Image
 	foregroundImg *ebiten.Image
@@ -45,9 +46,9 @@ func NewGame(worldFile string) Game {
 	g := Game{
 		currentScene: "game",
 		scenes: map[string]func(*Game, *ebiten.Image) error{
-			"game":    GameLoop,
-			"victory": VictoryScreen,
-			"lost":    LostScreen,
+			"game":    gameLoop,
+			"victory": victoryScreen,
+			"lost":    lostScreen,
 		},
 		Gravity:    gravityConst,
 		entities:   components.NewMap(),
@@ -98,7 +99,7 @@ func (g *Game) initializeWorld(worldMap *tiled.Map) {
 		log.Fatal("decode image: %s")
 	}
 
-	sImg, err := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	sImg, err = ebiten.NewImageFromImage(img, ebiten.FilterDefault)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -153,19 +154,23 @@ func (g *Game) initializeWorld(worldMap *tiled.Map) {
 
 		for _, t := range worldMap.LayerTiles(layer) {
 			id := fmt.Sprintf("%d", rand.Intn(10000))
+			g.parseTileObjects(id, t.Objectgroup.Objects)
 			g.entities.Add(id, components.Pos{gfx.V(float64(t.X), float64(t.Y))})
-			for _, o := range t.Objectgroup.Objects {
-				box := gfx.R(float64(o.X), float64(o.Y), float64(o.X+o.Width), float64(o.Y+o.Height))
-				b := components.NewHitbox(box)
+			// for _, o := range t.Objectgroup.Objects {
+			// 	box := gfx.R(float64(o.X), float64(o.Y), float64(o.X+o.Width), float64(o.Y+o.Height))
+			// 	b := components.NewHitbox(box)
 
-				// Check for special hitboxes
-				for _, p := range o.Properties.Property {
-					if p.Name == "allow_from_down" && p.Value == "true" {
-						b.Properties[p.Name] = true
-					}
-				}
-				g.entities.Add(id, b)
-			}
+			// 	// Check for special hitboxes
+			// 	for _, p := range o.Properties.Property {
+			// 		if p.Name == "allow_from_down" && p.Value == "true" {
+			// 			b.Properties[p.Name] = true
+			// 		}
+			// 		if p.Name == "target" && p.Value == "monster" { // Todo, make proper solution
+			// 			b.Properties["monsters_only"] = true
+			// 		}
+			// 	}
+			// 	g.entities.Add(id, b)
+			// }
 			g.parseTileProperty(id, t.Properties.Property)
 			g.entityList = append(g.entityList, id)
 		}
@@ -176,40 +181,16 @@ func (g *Game) initializeWorld(worldMap *tiled.Map) {
 			continue
 		}
 
+		fmt.Println(layer.Name)
+
 		for _, t := range worldMap.LayerTiles(layer) {
-
-			sRect := image.Rect(t.SrcX, t.SrcY, t.SrcX+t.Width, t.SrcY+t.Height)
-
-			// box := gfx.R(0, 0, 32, 32)
 			id := fmt.Sprintf("%d", rand.Intn(10000))
-			g.entities.Add(id, components.Pos{gfx.V(float64(t.X), float64(t.Y))})
-			g.entities.Add(id, components.Drawable{sImg.SubImage(sRect).(*ebiten.Image)})
-			// fmt.Println("Adding", t.X, t.Y)
-
-			// fmt.Println("aaaa")
-			for _, o := range t.Objectgroup.Objects {
-
-				box := gfx.R(float64(o.X), float64(o.Y), float64(o.X+o.Width), float64(o.Y+o.Height))
-				b := components.NewHitbox(box)
-
-				// Check for special hitboxes
-				for _, p := range o.Properties.Property {
-					if p.Name == "allow_from_down" && p.Value == "true" {
-						b.Properties[p.Name] = true
-					}
-				}
-				g.entities.Add(id, b)
-
-			}
-
-			g.parseTileProperty(id, t.Properties.Property)
-
-			g.entityList = append(g.entityList, id)
+			g.parseTile(id, t)
 		}
 	}
 
 	for _, o := range worldMap.FilteredObjectsType() {
-
+		fmt.Println("obj:", o.Properties)
 		switch o.Type {
 		case "player":
 			g.setPlayerStartingPos(gfx.V(float64(o.X), float64(o.Y)))
@@ -217,8 +198,69 @@ func (g *Game) initializeWorld(worldMap *tiled.Map) {
 			g.newTeleport(o)
 		case "trigger":
 			g.newTrigger(o)
+		default:
+			g.newEnemy(o, worldMap)
 		}
 	}
 
 	g.entityList = append(g.entityList, playerID)
+}
+
+func (g *Game) parseTileObjects(id string, objects []tiled.Object) {
+	for _, o := range objects {
+
+		box := gfx.R(float64(o.X), float64(o.Y), float64(o.X+o.Width), float64(o.Y+o.Height))
+		b := components.NewHitbox(box)
+
+		// Check for special hitboxes
+		for _, p := range o.Properties.Property {
+			if p.Name == "allow_from_down" && p.Value == "true" {
+				b.Properties[p.Name] = true
+			}
+			if p.Name == "target" && p.Value == "monster" { // Todo, make proper solution
+				b.Properties["monsters_only"] = true
+			}
+		}
+		g.entities.Add(id, b)
+	}
+}
+
+func (g *Game) parseTile(id string, t tiled.TileData) {
+	sRect := image.Rect(t.SrcX, t.SrcY, t.SrcX+t.Width, t.SrcY+t.Height)
+
+	// box := gfx.R(0, 0, 32, 32)
+	g.entities.Add(id, components.Pos{gfx.V(float64(t.X), float64(t.Y))})
+	g.entities.Add(id, components.Drawable{sImg.SubImage(sRect).(*ebiten.Image)})
+	g.parseTileObjects(id, t.Objectgroup.Objects)
+	g.parseTileProperty(id, t.Properties.Property)
+	g.entityList = append(g.entityList, id)
+}
+
+func (g *Game) newEnemy(o tiled.Object, worldMap *tiled.Map) {
+
+	id := fmt.Sprintf("%d", rand.Intn(1000000))
+
+	// https://doc.mapeditor.org/en/stable/reference/tmx-map-format/#tile-flipping
+	const flippedHorizontallyFlag uint32 = 0x80000000
+	const flippedVerticallyFlag uint32 = 0x40000000
+	const flippedDiagonallyFlag uint32 = 0x20000000
+
+	gid := ^(flippedHorizontallyFlag | flippedVerticallyFlag | flippedDiagonallyFlag) & o.Gid
+	t := worldMap.TileData(int(gid))
+	t.X = o.X
+	t.Y = o.Y - 16 // Bug: 5: Offset - 1???
+
+	sRect := image.Rect(t.SrcX, t.SrcY, t.SrcX+t.Width, t.SrcY+t.Height)
+	g.entities.Add(id, components.Pos{Vec: gfx.V(float64(t.X), float64(t.Y))})
+	if t.Type != "hitbox" {
+		g.entities.Add(id, components.Drawable{sImg.SubImage(sRect).(*ebiten.Image)})
+	}
+	fmt.Println("types", t.Type, ",", o.Type)
+
+	g.parseTileObjects(id, t.Objectgroup.Objects)
+	g.parseTileProperty(id, t.TilesetTile.Properties.Property)
+	g.parseTileProperty(id, o.Properties.Property)
+
+	g.entityList = append(g.entityList, id)
+	// fmt.Printf("adding teleport: %v\n", teleport)
 }

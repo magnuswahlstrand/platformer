@@ -34,7 +34,7 @@ var globalAudioContext *audio.Context
 
 func NewPlayer() (*Player, error) {
 
-	// return &Player{}, nil
+	return &Player{}, nil
 
 	var err error
 	globalAudioContext, err = audio.NewContext(sampleRate)

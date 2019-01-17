@@ -6,6 +6,9 @@ import (
 	"log"
 	"math/rand"
 	"strconv"
+	"strings"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/kyeett/gomponents/components"
@@ -80,7 +83,9 @@ func (g *Game) newTeleport(o tiled.Object) {
 }
 
 func (g *Game) parseTileProperty(id string, props []tiled.Property) {
+
 	for _, p := range props {
+
 		switch p.Name {
 		case "hazard":
 			val, _ := strconv.ParseBool(p.Value)
@@ -97,6 +102,21 @@ func (g *Game) parseTileProperty(id string, props []tiled.Property) {
 			if val {
 				g.entities.Add(id, components.Killable{})
 			}
+		case "velocity":
+			s := strings.Split(p.Value, ",")
+			if len(s) < 2 {
+				logrus.Error("parsed non-float values:", p.Value)
+				return
+			}
+			fx, err := strconv.ParseFloat(s[0], 64)
+			if err != nil {
+				logrus.Error("parsed non-float value:", s[0])
+			}
+			fy, err := strconv.ParseFloat(s[1], 64)
+			if err != nil {
+				logrus.Error("parsed non-float value:", s[1])
+			}
+			g.entities.Add(id, components.Velocity{Vec: gfx.V(fx, fy)})
 		}
 	}
 }
