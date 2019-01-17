@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/SolarLune/resolv/resolv"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/kyeett/gomponents/components"
@@ -16,7 +14,6 @@ func rectToShape(hb gfx.Rect) *resolv.Rectangle {
 const factor = 100
 
 func (g *Game) updateMovement(screen *ebiten.Image) {
-
 	var space resolv.Space
 	// Add possible collision entities
 	for _, e := range g.filteredEntities(components.HitboxType) {
@@ -42,6 +39,7 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 		tags := []string{e}
 		if hb.Properties["allow_from_down"] {
 			tags = append(tags, "allow_from_down")
+			// fmt.Print(e, " is roof: ")
 		}
 		s.SetTags(tags...)
 		space.AddShape(s)
@@ -56,7 +54,6 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 		r := rectToShape(hbMoved.Resized(gfx.V(0, 0), scaler))
 
 		// Check collision vertically
-
 		filterFunc := func(s resolv.Shape) bool { return true }
 		if v.Y < 0 {
 			filterFunc = func(s resolv.Shape) bool {
@@ -66,54 +63,49 @@ func (g *Game) updateMovement(screen *ebiten.Image) {
 		verticalSpace := space.Filter(filterFunc)
 
 		if res := verticalSpace.Resolve(r, 0, int32(factor*v.Y)); res.Colliding() && !res.Teleporting {
-			t := res.ShapeB.GetTags()[0]
-			// Calculate distance to object
-			// Todo, fix
 
+			t := res.ShapeB.GetTags()[0]
+
+			// Calculate distance to object
 			_, bY := res.ShapeB.GetXY()
 
-			entityUnderneath := v.Y > 0
+			targetUnderneath := v.Y > 0
 
-			if entityUnderneath {
+			if targetUnderneath {
 				fac := hb.Max.Y
 				pos.Y = float64(bY/factor) - fac
+
+				if g.entities.HasComponents(t, components.BouncyType) {
+					v.Y = bouncyConst
+				} else {
+					v.Y = 0
+					// Reset number of jumps
+					counter := g.entities.GetUnsafe(e, components.CounterType).(*components.Counter)
+					(*counter)["jumps"] = 2
+				}
+
+				// Killed!
+				if g.entities.HasComponents(t, components.KillableType) {
+					g.handleKilled(t)
+				}
+
 			} else if v.Y < 0 { // Underneath
-				fmt.Println("Underneath")
-			}
-
-			if g.entities.HasComponents(t, components.BouncyType) {
-				v.Y = bouncyConst
-			} else {
+				g.handleCollided(e, t)
 				v.Y = 0
-			}
-
-			// Killed!
-			if g.entities.HasComponents(t, components.KillableType) {
-				g.handleKilled(t)
 			}
 
 		} else {
 			pos.Y += v.Y
 		}
 
-		if res := space.Resolve(r, int32(factor*v.X), 0); res.Colliding() && !res.Teleporting {
+		r = rectToShape(hb.Moved(pos.Vec).Resized(gfx.V(0, 0), scaler))
+		if res := space.Resolve(r, int32(factor*v.X), 0); res.Colliding() { //&& !res.Teleporting {
 			t := res.ShapeB.GetTags()[0]
-			g.handleCollidedX(e, t)
+			g.handleCollided(e, t)
 		} else {
 			pos.X += v.X
 		}
 	}
-
-	// Add possible collision entities
-	// for _, e := range g.filteredEntities(components.VelocityType) {
-	// 	if e == playerID {
-	// 		continue
-	// 	}
-	// 	pos := g.entities.GetUnsafe(e, components.PosType).(*components.Pos)
-	// 	// hb := g.entities.GetUnsafe(e, components.HitboxType).(*components.Hitbox)
-	// 	v := g.entities.GetUnsafe(e, components.VelocityType).(*components.Velocity)
-	// 	pos.Vec = pos.Add(v.Vec)
-	// }
 
 	g.updateMonsterMovement()
 
@@ -184,7 +176,7 @@ func (g *Game) handleKilled(t string) {
 
 }
 
-func (g *Game) handleCollidedX(e, t string) {
+func (g *Game) handleCollided(e, t string) {
 
 	v := g.entities.GetUnsafe(e, components.VelocityType).(*components.Velocity)
 	if g.entities.HasComponents(t, components.HazardType) {
@@ -208,8 +200,10 @@ func (g *Game) handleCollidedX(e, t string) {
 		return
 	}
 
+	// Todo, this will not work well with Y-collisions?
 	// Bounce if not jumping or falling
 	if v.Y == 0 {
 		v.X = -0.5 * v.X
 	}
+
 }

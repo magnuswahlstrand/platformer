@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
@@ -11,6 +12,7 @@ import (
 func (g *Game) updatePreMovement() {
 	for _, e := range []string{playerID} {
 		v := g.entities.GetUnsafe(e, components.VelocityType).(*components.Velocity)
+		counter := g.entities.GetUnsafe(e, components.CounterType).(*components.Counter)
 
 		// Gravity
 		v.Y += g.Gravity
@@ -19,9 +21,16 @@ func (g *Game) updatePreMovement() {
 		v.X = 0.90 * v.X
 		d := g.entities.GetUnsafe(e, components.DirectionType).(*components.Direction)
 		switch {
-		case inpututil.IsKeyJustPressed(ebiten.KeyUp):
-			v.Y = -jumpSpeed
+		case inpututil.IsKeyJustPressed(ebiten.KeyUp) && (*counter)["jumps"] > 0:
 			musicPlayer.PlayAudio(jumpSound)
+
+			if (*counter)["jumps"] == 1 {
+				v.Y = -jumpSpeed * 0.8
+			} else {
+				v.Y = -jumpSpeed
+			}
+			(*counter)["jumps"]--
+			fmt.Println("Jump!")
 
 		case ebiten.IsKeyPressed(ebiten.KeyRight):
 			v.X += horizontalAcceleration
@@ -67,7 +76,6 @@ func (g *Game) updatePostMovement() {
 			a.Ase.Play("walk " + direction)
 		default:
 			a.Ase.Play("stand " + direction)
-
 		}
 	}
 

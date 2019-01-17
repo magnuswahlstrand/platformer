@@ -4,12 +4,14 @@ A simple platformer, to test various 2d game concepts
 
 ## Bugs
 
-- Multiple jumps
-- Wall walking
-- Background bug when looping game
-- Restore foreground
-- Standing still renders you untouchable
-- No deaths from underneath
+- [x] **Ongoing** - Multiple jumps
+- [ ] Wall walking
+- [x] Background bug when looping game
+- [x] Restore foreground
+- [ ] Standing still renders you untouchable
+- [x] No deaths from underneath
+- [ ] Non-transparent background on player
+- [x] Buggy doublejump at top
 
 ### Tasks
 
@@ -19,7 +21,7 @@ A simple platformer, to test various 2d game concepts
 - [ ] Menu screen
 - [ ] Loading between screens
 - [ ] Highscore screen
-- [ ] Controls for phone
+- [ ] **Ongoing** - Controls for phone
 
 #### Sound
 
@@ -42,13 +44,13 @@ A simple platformer, to test various 2d game concepts
 
 #### Graphics
 
-- [ ] Sprite for teleport
+- [x] Sprite for teleport
 - [ ] Sprite for goal
 
 #### Build/delivery
 
 - [x] Make compilable to (GopherJS)
-- [x] Use gfx-geom instead of pixel-geom
+- [ ] Create github page
 
 #### Other
 
@@ -61,9 +63,11 @@ A simple platformer, to test various 2d game concepts
 
 #### Refactoring
 
+- [x] Use gfx-geom instead of pixel-geom
 - [ ] Use a public Tiled library
 - [ ] Simplify game layer initialization
 - [ ] Use Direction byte rather than Direction struct
+- [ ] CollidedX vs CollidedY, currently both in same
 
 #### Maybe
 
@@ -73,6 +77,8 @@ A simple platformer, to test various 2d game concepts
 - [ ] Flappy bird
 - [ ] Checkpoints
 - [ ] Variable jump strength
+- [ ] Boss level
+- [ ] Ice level
 
 ### Credits
 

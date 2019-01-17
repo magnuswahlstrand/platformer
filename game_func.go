@@ -148,6 +148,7 @@ func (g *Game) newPlayer() {
 	g.entities.Add(playerID, components.Direction{1.0})
 	counters := components.Counter{}
 	counters["lives"] = 3
+	counters["jumps"] = 2
 	g.entities.Add(playerID, counters)
 	playerFile.Play("stand right")
 	g.entities.Add(playerID, components.Animated{playerFile})

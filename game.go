@@ -77,8 +77,9 @@ func NewGame(worldFile string) Game {
 }
 
 func (g *Game) initializeWorld(worldMap *tiled.Map) {
+	g.Width, g.Height = worldMap.Size()
 	camera, _ = ebiten.NewImageFromImage(gfx.NewImage(g.Width, g.Height, colornames.Red), ebiten.FilterDefault)
-	tmpVisionImg, _ = ebiten.NewImageFromImage(gfx.NewImage(g.Width, g.Height, colornames.Red), ebiten.FilterDefault)
+	tmpVisionImg, _ = ebiten.NewImageFromImage(gfx.NewImage(g.Width, g.Height, color.Transparent), ebiten.FilterDefault)
 
 	g.Width, g.Height = worldMap.Size()
 	// Remove all existing entitites, except the player
@@ -182,6 +183,8 @@ func (g *Game) initializeWorld(worldMap *tiled.Map) {
 		}
 
 		fmt.Println(layer.Name)
+		fmt.Println(layer.Width)
+		fmt.Println(layer.Height)
 
 		for _, t := range worldMap.LayerTiles(layer) {
 			id := fmt.Sprintf("%d", rand.Intn(10000))
@@ -190,7 +193,6 @@ func (g *Game) initializeWorld(worldMap *tiled.Map) {
 	}
 
 	for _, o := range worldMap.FilteredObjectsType() {
-		fmt.Println("obj:", o.Properties)
 		switch o.Type {
 		case "player":
 			g.setPlayerStartingPos(gfx.V(float64(o.X), float64(o.Y)))
@@ -255,7 +257,6 @@ func (g *Game) newEnemy(o tiled.Object, worldMap *tiled.Map) {
 	if t.Type != "hitbox" {
 		g.entities.Add(id, components.Drawable{sImg.SubImage(sRect).(*ebiten.Image)})
 	}
-	fmt.Println("types", t.Type, ",", o.Type)
 
 	g.parseTileObjects(id, t.Objectgroup.Objects)
 	g.parseTileProperty(id, t.TilesetTile.Properties.Property)

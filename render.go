@@ -114,7 +114,7 @@ func (g *Game) drawDebugInfo(screen *ebiten.Image) {
 	fmt.Fprintf(wr, "x, y:\t(%4.0f,%4.0f)\t\n\t(%4.2f,%4.2f)\t", pos.X, pos.Y, v.X, v.Y)
 	wr.Flush()
 
-	// ebitenutil.DebugPrintAt(screen, buf.String(), 50, 60)
+	ebitenutil.DebugPrintAt(screen, buf.String(), 50, 60)
 
 	ebitenutil.DebugPrintAt(screen, ebitenconsole.String(), 0, 40)
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %.2f", ebiten.CurrentTPS()), 190, 0)
@@ -155,6 +155,10 @@ func (g *Game) drawEntities(screen *ebiten.Image) {
 
 		op.GeoM.Translate(pos.X, pos.Y)
 		screen.DrawImage(img, op)
+
+		if debug {
+			ebitenutil.DebugPrintAt(screen, e, int(pos.X), int(pos.Y))
+		}
 
 		// For debug, add dot to mark position
 		ebitenutil.DrawRect(traceImg, pos.X, pos.Y, 1, 1, colornames.Red)
@@ -214,9 +218,10 @@ func (g *Game) drawHitboxes(screen *ebiten.Image) {
 func (g *Game) drawPlayerVision(screen *ebiten.Image) {
 	cr := g.getCameraPosition()
 
-	opt := &ebiten.DrawImageOptions{}
 	// opt.Address = ebiten.AddressRepeat
-	tmpVisionImg = foregroundImg //.SubImage(cr).(*ebiten.Image)
+
+	opt := &ebiten.DrawImageOptions{}
+	tmpVisionImg.DrawImage(foregroundImg, opt) //.SubImage(cr).(*ebiten.Image)
 
 	pos := g.entities.GetUnsafe(playerID, components.PosType).(*components.Pos)
 	opt.GeoM.Translate(pos.X-float64(visionImg.Bounds().Dx())/2+15, pos.Y-float64(visionImg.Bounds().Dy())/2+20)
