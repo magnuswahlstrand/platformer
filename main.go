@@ -42,6 +42,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// ebiten.SetMaxTPS(1000)
+
 	if err := ebiten.Run(g.update, cameraWidth, cameraHeight, 3, "Aseprite demo"); err != nil {
 		logrus.Error(err)
 	}

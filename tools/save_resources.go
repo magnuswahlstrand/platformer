@@ -58,6 +58,10 @@ func main() {
 			path: "../tiled/world7.tmx",
 			name: "World_7_tmx",
 		},
+		resource{
+			path: "../tiled/world-12.tmx",
+			name: "World_12_tmx",
+		},
 	}
 
 	f, err := os.Create("assets/assets.go")

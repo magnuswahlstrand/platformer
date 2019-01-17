@@ -50,7 +50,7 @@ func (g *Game) loadWorldMap(filename string) *tiled.Map {
 	}
 	worldMap, err := tiled.MapFromBytes(resources.LookupFatal(g.baseDir+"/"+filepath.Base(filename)), readFromMap)
 
-	fmt.Println("load tilemap", filename)
+	// fmt.Println("load tilemap", filename)
 	// worldMap, err := tiled.MapFromFile(g.baseDir + "/" + filepath.Base(filename))
 	if err != nil {
 		log.Fatal(err)

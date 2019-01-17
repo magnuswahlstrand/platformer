@@ -139,7 +139,7 @@ func (g *Game) Reset() {
 }
 
 func (g *Game) newPlayer() {
-	hitbox := gfx.R(6, 10, 26, 26)
+	hitbox := gfx.R(10, 10, 22, 26)
 	g.entityList = append(g.entityList, playerID)
 	g.entities.Add(playerID, components.NewHitbox(hitbox))
 	g.entities.Add(playerID, components.Pos{Vec: gfx.V(0, 0)})

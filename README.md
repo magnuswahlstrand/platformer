@@ -4,7 +4,7 @@ A simple platformer, to test various 2d game concepts
 
 ## Bugs
 
-- [x] **Ongoing** - Multiple jumps
+- [x] Multiple jumps
 - [ ] Wall walking
 - [x] Background bug when looping game
 - [x] Restore foreground
@@ -45,7 +45,7 @@ A simple platformer, to test various 2d game concepts
 #### Graphics
 
 - [x] Sprite for teleport
-- [ ] Sprite for goal
+- [x] Sprite for goal
 
 #### Build/delivery
 

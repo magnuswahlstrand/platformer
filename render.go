@@ -172,14 +172,6 @@ func (g *Game) drawBackground(camera *ebiten.Image) {
 	camera.DrawImage(backgroundImg.SubImage(cr).(*ebiten.Image), op)
 }
 
-func (g *Game) getCameraPosition() image.Rectangle {
-	pos := g.entities.GetUnsafe(playerID, components.PosType).(*components.Pos)
-	cx := int(pos.X - cameraWidth/2)
-	cx = min(g.Width-cameraWidth, cx)
-	cx = max(0, cx)
-	return image.Rect(cx, 0, cx+cameraWidth, cameraHeight)
-}
-
 func drawTrail(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.ColorM.Scale(1, 1, 1, 0.98)
@@ -215,8 +207,16 @@ func (g *Game) drawHitboxes(screen *ebiten.Image) {
 	}
 }
 
+func (g *Game) getCameraPosition() image.Rectangle {
+	pos := g.entities.GetUnsafe(playerID, components.PosType).(*components.Pos)
+	cx := int(pos.X - cameraWidth/2)
+	cx = min(g.Width-cameraWidth, cx)
+	cx = max(0, cx)
+	return image.Rect(cx, 0, cx+cameraWidth, cameraHeight)
+}
+
 func (g *Game) drawPlayerVision(screen *ebiten.Image) {
-	cr := g.getCameraPosition()
+	// cr := g.getCameraPosition()
 
 	// opt.Address = ebiten.AddressRepeat
 
@@ -225,7 +225,7 @@ func (g *Game) drawPlayerVision(screen *ebiten.Image) {
 
 	pos := g.entities.GetUnsafe(playerID, components.PosType).(*components.Pos)
 	opt.GeoM.Translate(pos.X-float64(visionImg.Bounds().Dx())/2+15, pos.Y-float64(visionImg.Bounds().Dy())/2+20)
-	opt.GeoM.Translate(float64(cr.Min.X), 0)
+	// opt.GeoM.Translate(float64(cr.Min.X), 0)
 	opt.CompositeMode = ebiten.CompositeModeDestinationOut
 
 	// tmp, _ := ebiten.NewImage(200, 200, ebiten.FilterDefault)
